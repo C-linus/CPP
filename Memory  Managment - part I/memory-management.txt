@@ -1,0 +1,79 @@
+### Dynamic Memory Alllocation
+
+1. C/C++ programs are provided with different types of memory areas
+    1) stack - allocated automatically in runtime (Track Execution Flow)
+    2) data section - allocated for gloabal and static data
+    3) heap - allocated at runtime (Objects  & Instances)
+
+2. All the memory is taken from the process address space.
+
+3. C/C++ programs provide support for memory allocation at runtime (also called dynamic memory)
+
+4. Allocations on the heap have to be managed by the programmer
+
+5. Stack and data section allocations are managed by the runtime.
+
+
+
+### Dynamic Memory Alllocation in C
+
+1) C provides various  functions for allocating memory from the heap.
+
+    1) malloc: allocate raw memory on the heap
+    2) calloc: allocates memory on the heap and initializes it to zero
+    3) realloc: allocates larger chunk or shrink chunk of memmory for an existing allocation.
+    4) free: deallocates/ releases the  memory allocated through the above functions.
+
+
+### Dynamic Memory Alllocation in C++
+
+1) C++ provides two operators for dynamic memory allocation
+2) new: allocates memory on the heap
+3) delete: deallocates memory
+4) Memory that is allocated through new has to be released with delete
+
+    <type> *<variable> = new <type> (optional args);
+    delete <variable>;
+
+    exmaple:-
+    int *ptr = new int(value);
+    delete ptr;
+
+
+### malloc Vs new
+
+malloc
+
+1.Function
+2.Requires size during allocation
+3.Cannot initialize memory
+4.Cannot call constructors
+5.Returns void pointer that needs to be type casted
+6.Cannot be customized
+7.malloc, calloc & realloc
+8.Return NULL on failure
+
+new
+
+1.Operator
+2.Size is asscertained from the type
+3.Can initialize memory
+4.Can call constructors
+5.Returns correct type of pointer
+6.Can be customized through overloading
+7.Has different forms
+8.Throws exception on failure
+
+### new For Arrays
+
+1. Another from of new
+2. Used for allocating dynamic Arrays
+3. Written as new[]
+4. Subsequently, use delete [] for releasing the memory
+    <type> *<variable> = new <type> [size];
+    delete[] <variable>;
+
+    exmaple:-
+
+    int *ptr  = new int[5]; //Allocate memory for 5 integers
+    delete []ptr;   //Note the usage of[] with delete
