@@ -1,0 +1,47 @@
+### Copy ctor(constructor)
+
+1. Creates copy of the object's state in another object. (copies member variables(attributes) of a object, to a new object).
+2. Synthesized automatically
+3. Default implementation copies values
+4. User-defined implementation required for pointer members
+
+
+### Four cases which invokes copy ctor automatically
+
+1.     Integer i(5); Integer i2(i);  // When an object is passed into object of same class
+2.     when the object is passed into the function call
+
+        example:- 
+            void Print(Integer i)
+            {
+
+            }
+
+3.      when a function returns object by value
+
+        example:-
+            Integer Add(int x, int y)
+            {
+                return Integer(x + y);
+            }
+
+4.      A copy also gets created, when one object is assigned to another.
+        Integer i, i2;
+        i = i2;         // shallow copy
+
+
+class Integer{
+    int *m_pInt;
+
+    public:
+        Integer(Integer obj) // This is not possible, because the call to this constructor indeed creates a copy, which creates a infinte loop
+        Integer(Integer &obj) // Always pass as reference to avoid this problem
+}
+
+
+### Rule of 3
+
+1) All should be defined, if a user implements any of them
+    1. Destructor
+    2. Copy Constructor
+    3. Copy Assignment Operator

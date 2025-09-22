@@ -1,0 +1,11 @@
+### Const Member Functions
+
+1) Member functions qualified with const keyword
+2) Both declaration and definition is qualified
+3) such functions cannot change value of any member variables
+4) Useful for creating read-only functions
+5) Constant objects can invoke only constant member functions
+
+Note:
+1) const qualifier applied to the 'this' pointer under the hood, this doesn't allow the function to modify the member variables(attributes).
+2) The function qualified with 'this' keyword can only invoke, const member functions, because that const this pointer has to be used to invoke other functions. 

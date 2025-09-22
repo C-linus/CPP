@@ -1,0 +1,11 @@
+### Delegating ctor (Constructor)
+
+1) Allows a Constructor to invoke another constructor.
+2) Replacement for common initialization
+3) Reduces duplicate initialization code in multiple constructors.
+
+
+class Class{
+    Class():Class(val1,val2){}
+    Class(arg1,arg2){// Initialization code}
+};
