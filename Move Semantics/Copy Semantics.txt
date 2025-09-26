@@ -1,0 +1,8 @@
+### Copy & Move Semantics
+
+1. Copy is implemented through copy constructor
+2. Copy of the object state is created.
+3. Wasteful in case copy is created from a temporary
+4. Instead, the state can be moved from the source object
+5. Implemented through move semantics
+
