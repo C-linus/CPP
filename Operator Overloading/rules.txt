@@ -1,0 +1,9 @@
+### Rules
+
+1. Associativity, precedence & arity (operand count) does not change
+2. Operator functions should be non-static (Except for new & delete)
+3. One argument should be user defined type
+4. Global overload if first operand is primitive type
+5. Not all Operators can be overloaded (.,?,.*,sizeof)
+6. Cannot define new operators
+7. Overloaded for conventional behaviour only

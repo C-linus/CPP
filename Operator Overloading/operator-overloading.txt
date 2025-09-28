@@ -1,0 +1,17 @@
+### Operator Overloading
+
+1. Custom implementation for primitive operators
+2. Allows usage of user-defined objects in mathematical expressions
+3. Overloaded as functions but provide a convenient notation
+4. Implemented as member or global functions 
+5. Require usage of the operator keyword
+6. As global functions, requires same no. of arguments as the operands
+7. As member functions, one operand is passed as argument through this pointer.
+    1) Binary operator will require only one explicit argument
+    2) Unary operator will not require any explicit argument
+
+8. post increment signature, to differentiate from pre increment.
+    Integer & operator ++(int);
+
+Syntax:-
+    <ret> operator <#> (<arguments>)

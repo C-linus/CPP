@@ -1,0 +1,23 @@
+### Type Conversions
+
+1. Conversion between types
+2. Performed through casts
+3. Ordered by compiler (impicit) or user(explicit)
+4. Eplicit conversion uses casting operators
+5. Conversion between
+    1. Basic & Basic
+    2. Basic & user-defined
+    3. user-defined & Basic
+    4. user-defined & user-defined
+
+### Type Conversion Operator
+ 
+    Used to convert user-defined object to primitive type and used to convert primitive type to primitive type.
+    It only works, if the operand on the left matches the type of the operator function.
+
+
+    syntax:-
+        operator <type>() (No arguments & No return type)
+
+    Example:-
+        operator int()
