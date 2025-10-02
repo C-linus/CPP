@@ -1,0 +1,120 @@
+### Smart Pointers
+
+## std::unique_ptr
+---
+
+# 📌 `std::unique_ptr` Summary
+
+### What it is
+
+* A **smart pointer** that exclusively owns a dynamically allocated object.
+* Only one `unique_ptr` can own a given resource at a time.
+* When the `unique_ptr` goes out of scope, it automatically calls `delete` (or a custom deleter).
+* Non-copyable (copy constructor/assignment deleted) but **movable**.
+
+---
+
+## 🔑 Constructors
+
+```cpp
+std::unique_ptr<T> p;                 // empty, holds nullptr
+std::unique_ptr<T> p(new T(...));     // takes ownership of raw pointer (explicit)
+auto p = std::make_unique<T>(...);    // preferred, safer than `new`
+```
+
+---
+
+## 🔑 Core Methods
+
+### `get()`
+
+```cpp
+T* ptr = p.get();
+```
+
+* Returns the raw pointer without releasing ownership.
+* Useful for interop with APIs that expect raw pointers.
+  ⚠️ Don’t `delete` it yourself, since `unique_ptr` still owns it.
+
+---
+
+### `release()`
+
+```cpp
+T* raw = p.release();
+```
+
+* Releases ownership and returns the raw pointer.
+* After this, `p` becomes `nullptr`.
+* You are now responsible for manually `delete`ing the raw pointer.
+  ⚠️ Easy to leak memory if you forget.
+
+---
+
+### `reset()`
+
+```cpp
+p.reset(new T(...));   // deletes old object (if any), takes ownership of new
+p.reset();             // deletes and becomes nullptr
+```
+
+* Safely replaces the managed object.
+* If you pass a new pointer, it deletes the old one first.
+
+---
+
+### `swap()`
+
+```cpp
+p.swap(q);  // swaps ownership between two unique_ptrs
+```
+
+---
+
+### Observers
+
+```cpp
+if (p) { ... }     // checks if not null
+p == nullptr;       // true if empty
+```
+
+---
+
+## 🔑 Moving
+
+```cpp
+std::unique_ptr<T> p1 = std::make_unique<T>();
+std::unique_ptr<T> p2 = std::move(p1);  // ownership transferred
+```
+
+* `p1` becomes `nullptr`.
+* Only way to transfer ownership between `unique_ptr`s.
+
+---
+
+## 🔑 Custom Deleter
+
+```cpp
+std::unique_ptr<FILE, decltype(&fclose)> file(fopen("test.txt", "r"), &fclose);
+```
+
+* Lets you specify how the resource should be cleaned up (not only with `delete`).
+
+---
+
+# 🚀 Best Practices
+
+1. Prefer `std::make_unique` over raw `new` (exception safety, clarity).
+2. Use `reset()` if you want to reassign a new object.
+3. Use `release()` only when absolutely necessary (rarely needed).
+4. Don’t use raw pointer from `get()` unless for read-only interop.
+5. Always pass `unique_ptr` by **value** if the function should take ownership, or by **reference** if it should not.
+
+---
+
+✅ **In one line:**
+`std::unique_ptr` = “owning, movable smart pointer” with tools to safely manage dynamic memory (`get`, `release`, `reset`, `swap`) and enforce unique ownership.
+
+---
+
+
