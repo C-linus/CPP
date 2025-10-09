@@ -1,0 +1,25 @@
+### Enumerated Type
+
+1. Type created through enum keyword
+2. Created with restricted range of values, called symbolic constants or enumertaors
+3. Enumertaors are internally  represented as undefined integral types
+4. Can implicitly convert to an integer, but not the other way round.
+5. Default value starts from 0, but users can assign any value.
+6. Enumertaors are visible in the scope in which they're defined
+
+    Example:-
+        enum Color(Red, Green, Blue);
+        Color c = Red;
+        c =1; // compiler error, use static_cast to convert
+        int x = Green; // x will contain 1
+
+        enum  Color {RED,GREEN,BLUE} // Global Enum
+        enum class Color {RED,GREEN,BLUE} // Scoped Enum
+        enum class Color: long{RED,GREEN,BLUE} // Type used to declare the enum
+        
+        Intialization:-
+            enum class Color {RED,GREEN,BLUE} // Default start from 0 and increments 1 ;
+                RED = 0, GREEN = 1, BLUE = 2
+
+            enum class Color  {RED = 5, GREEN, BLUE}
+                 RED = 5, GREEN = 6, BLUE = 7

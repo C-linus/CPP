@@ -1,0 +1,12 @@
+### Unions in C++
+
+1. Gives the ability to represent all the members in the same memory
+2. Saves space
+3. However, it has several disadvantages
+    1) No way to know which type it holds
+    2) Nested types with non-default constructors deletes the  default constructor of the union.
+    3) Cannot assign objects of user-defined types directly to a union member
+    4) User-defined types are not destroyed implicitly.
+    5) Cannot have a base class
+    6) Cannot derive from a  union
+    7) Union cannot contain virtual functions
