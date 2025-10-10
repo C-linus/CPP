@@ -1,0 +1,75 @@
+### Object Oriented Programming
+
+
+1. System is made up of objects.
+2. Object is instance of a class.
+3. Classes & Objects are related.
+4. Collaboration between objects.
+5. Define the behaviour of the system 
+
+
+## Composition
+
+1. Object composed in another objects
+2. Represents "has-a" relation
+3. Reuse behaviour
+
+
+    Example:-
+        class Car
+        {
+            Engine m_Engine;
+            public:
+                void Acclerate()
+                {
+                    m_Engine.Intake();
+                }
+        }
+
+        Car has an engine and uses its implementation to move.
+
+## Inheritance
+
+1. Class inherits the features of another class
+2. Reuse & inherit behaviour
+3. Represents "is-a" relationship
+
+
+    Example:-
+        Animal
+            1.Eat()
+            2.Speak()
+            3.Run()
+
+        Dog,Sheep,Cow inherits Animal
+
+
+    Syntax for Inheritance:-
+        class <child class> : <access modifier> <base class>
+
+        class Dog : public Animal
+
+### Access modifiers
+
+    Class Base{
+        private:
+            MemberA     // Accessible only within class and functions marked with freind
+        public:
+            MemberB     // Accessible anywhere in the code
+        protected:
+            MemberC     // Accessible only within the class and it's derived classes and functions marked with friend keyword
+    };
+
+
+    | Inheritance Type | `Base::public` in Derived | `Base::protected` in Derived | `Base::private` in Derived |
+    | ---------------- | ------------------------- | ---------------------------- | -------------------------- |
+    | `public`         | public                    | protected                    | not accessible             |
+    | `protected`      | protected                 | protected                    | not accessible             |
+    | `private`        | private                   | private                      | not accessible             |
+
+
+### Object Construction
+
+1. Constructors execute from base to child.
+2. Destructors execute form child to base.
+3. Base data members will be part of child object.
