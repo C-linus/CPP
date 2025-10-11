@@ -1,0 +1,76 @@
+### Object members Construction & Destruction Order
+
+
+## ✅ Rule 1: Construction Order
+
+1. **Members are constructed first**, **before the constructor body**.
+2. They are constructed **in the order they are declared** in the class/struct.
+
+### Example:
+
+```cpp
+#include <iostream>
+using namespace std;
+
+struct A {
+    A() { cout << "A constructed\n"; }
+    ~A() { cout << "A destroyed\n"; }
+};
+
+struct B {
+    B() { cout << "B constructed\n"; }
+    ~B() { cout << "B destroyed\n"; }
+};
+
+struct C {
+    A a;
+    B b;
+    C() { cout << "C constructor body\n"; }
+    ~C() { cout << "C destructor body\n"; }
+};
+
+int main() {
+    C c;
+}
+```
+
+**Output (construction phase):**
+
+```
+A constructed   // member a first
+B constructed   // member b next
+C constructor body
+```
+
+---
+
+## ✅ Rule 2: Destruction Order
+
+1. **Destructor body runs first**.
+2. Then **members are destroyed in reverse order of declaration**.
+
+**Output (destruction phase):**
+
+```
+C destructor body
+B destroyed    // last constructed, destroyed first
+A destroyed    // first constructed, destroyed last
+```
+
+---
+
+## 🧩 Summary Table
+
+| Phase        | Order                                               | Notes                                             |
+| ------------ | --------------------------------------------------- | ------------------------------------------------- |
+| Construction | Members in **declaration order** → constructor body | Ensures dependencies are set up                   |
+| Destruction  | Destructor body → members in **reverse order**      | Ensures members still exist while destructors run |
+
+---
+
+### Key Points:
+
+* **Declaration order matters** if one member depends on another.
+* **Unions** are special: compiler doesn’t know which member is active, so it won’t auto-call destructors — you must do it manually.
+* If members are independent, order is mostly just predictable — no crash.
+
