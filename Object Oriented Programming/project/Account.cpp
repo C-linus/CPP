@@ -3,7 +3,7 @@
 
 int Account::S_ANGenerator = 1000;
 
-Account::Account(const std::string &name, float balance): m_AccNo(name), m_Balance(balance)
+Account::Account(const std::string &name, float balance): m_Name(name), m_Balance(balance)
 {
     m_AccNo = ++S_ANGenerator;
 }
@@ -36,7 +36,7 @@ void Account::AccumulateInterest()
 
 void Account::Withdraw(float amount)
 {
-    if(amount <= m_Balance)
+    if(amount < m_Balance)
         m_Balance -= amount;
     else
         std::cout<<"Insufficient Balance: "<<m_Balance<<std::endl;

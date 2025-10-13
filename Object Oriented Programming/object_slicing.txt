@@ -1,0 +1,15 @@
+### Object Slicing
+
+1. A situation in which the compiler deliberately removes some part of an object.
+
+2. Occurs when child class object is assigned to a concrete base class object.
+
+3. The size of a child class object may be more than its base.
+
+4. While assigning it to a base object, some part of the memory may get overwritten.
+
+5. This will lead to memory corruption
+
+6. To prevent this, the compiler slices the child object, effectively removing the memory that contains its attributes.
+
+7. The object is then copied into the base object.

@@ -1,12 +1,11 @@
 #include <iostream>
-#include "Account.h"
+#include "Savings.h"
+#include "Checking.h"
+#include "Transact.h"
 
 int main()
 {
-    Account acc("Bob",1000);
-    std::cout << "Initial Balance:" << acc.GetAccountNo() << std::endl;
-    acc.Deposit(200);
-    acc.Withdraw(380);
-    std::cout<< "Balance: " << acc.GetBalance() << std::endl;
+    Savings acc("Bob",100,0.05f);
+    Transact(&acc);
     return 0;
 }

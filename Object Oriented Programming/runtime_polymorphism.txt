@@ -1,0 +1,105 @@
+### 📝 C++ Runtime Polymorphism: vptr & vtable Explained
+
+## 1️⃣ **Each class with virtual functions gets a vtable**
+
+* The **compiler** creates a hidden table (usually in `.rdata` or `.rodata`) containing **pointers to that class’s virtual functions**.
+* Example:
+
+```
+Base::vtable     → [ &Base::show ]
+Derived::vtable  → [ &Derived::show ]
+```
+
+* The vtable is **class-specific**, not object-specific.
+
+---
+
+## 2️⃣ **Each object has a hidden pointer: `vptr`**
+
+* The compiler inserts a hidden member called **vptr** (virtual pointer) inside every object with virtual functions.
+* **Usually placed at the very beginning of the object** (offset 0) for fast access.
+* The **vptr points to the vtable of the object's actual type**.
+
+---
+
+## 3️⃣ **Constructors initialize the vptr**
+
+* During object construction, constructors run **from base → derived**.
+* Each constructor **sets the vptr** to its own class’s vtable:
+
+```cpp
+Derived d;
+```
+
+Execution order:
+
+1. `Base::Base()` → sets `vptr = &Base::vtable`
+2. `Derived::Derived()` → overwrites `vptr = &Derived::vtable`
+
+✅ After construction, `d.vptr` points to `Derived::vtable`.
+
+---
+
+## 4️⃣ **Virtual function call mechanism at runtime**
+
+When you write:
+
+```cpp
+Base* bp = &d;
+bp->show();  // virtual call
+```
+
+The CPU executes something like:
+
+```asm
+mov eax, [bp]          ; load vptr from object
+mov eax, [eax + offset] ; load function pointer from vtable
+call eax               ; jump to actual function
+```
+
+* The **pointer type (`Base*`) does not matter** — the vptr points to the correct vtable.
+* The **actual function called depends on the object’s dynamic type**.
+
+---
+
+## 5️⃣ **Memory layout example**
+
+```cpp
+class Base { virtual void f(); int x; };
+class Derived : public Base { virtual void g(); int y; };
+```
+
+| Offset | Member                                                  |
+| ------ | ------------------------------------------------------- |
+| 0      | **vptr** → points to Derived::vtable after Derived ctor |
+| 4      | Base::x                                                 |
+| 8      | Derived::y                                              |
+
+---
+
+## 6️⃣ **Key points**
+
+* Each object with virtuals has **its own vptr**.
+* The vptr is **automatically inserted** by the compiler.
+* The vptr is **first in the object** for single inheritance.
+* **Virtual calls** use the vptr → vtable pointer to call the right function at runtime.
+* The vtable contains **all virtual function addresses** of that class; the compiler decides the **offset at compile-time**.
+
+---
+
+## 7️⃣ **Summary table**
+
+| Concept          | Stored in           | Description                                                    |
+| ---------------- | ------------------- | -------------------------------------------------------------- |
+| **vptr**         | Inside each object  | Points to the class’s vtable                                   |
+| **vtable**       | In `.rdata` section | Contains addresses of that class’s virtual functions           |
+| **Constructor**  | Code section        | Initializes or overwrites `vptr` as it walks inheritance chain |
+| **Virtual call** | Runtime dispatch    | Fetches function address from vtable and jumps there           |
+
+---
+
+💡 **Takeaway:**
+
+> The inheritance hierarchy during constructor execution ensures that the object’s vptr points to the **correct vtable**. That’s why virtual function calls **always resolve to the right function**, even when accessed via a base class pointer.
+
+

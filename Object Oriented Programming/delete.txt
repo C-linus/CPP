@@ -1,0 +1,121 @@
+### Delete operator
+
+
+## 🧩 1️⃣ What `delete` actually does
+
+When you write:
+
+```cpp
+delete ptr;
+```
+
+This is **not** just a single operation.
+It actually expands conceptually into **three steps** (done by the compiler):
+
+```cpp
+if (ptr != nullptr) {
+    ptr->~TypeOfPointer();  // (1) call destructor (statically or dynamically)
+    operator delete(ptr);   // (2) deallocate memory from heap
+}
+```
+
+So, what happens depends *entirely* on **how step (1)** works.
+
+---
+
+## ⚙️ 2️⃣ Without `virtual` destructor
+
+Let’s say:
+
+```cpp
+Base* bp = new Derived();
+delete bp;
+```
+
+Since `Base::~Base()` is **not virtual**, the compiler binds the destructor **statically** —
+that means:
+
+> It will *only call* `Base::~Base()` because that’s the type of the pointer.
+
+No vtable lookup, no runtime check.
+
+Then `operator delete(bp)` is called —
+but it deallocates memory **as if the object were only a `Base`**.
+
+That’s dangerous because the memory that was actually allocated was **`sizeof(Derived)`**, not `sizeof(Base)`!
+
+---
+
+### 🧠 Visualize the memory
+
+```
+Heap:
++-----------------------+
+| Derived::data_members |
+| Base::data_members    |
++-----------------------+
+^
+bp points here (Base subobject start)
+```
+
+Now `delete bp` does:
+
+1️⃣ Calls only `Base::~Base()` → Derived part untouched (no cleanup).
+2️⃣ Calls `operator delete(bp, sizeof(Base))` → may free memory incorrectly.
+
+That’s why **it’s undefined behavior** — sometimes it leaks, sometimes it corrupts the heap.
+
+---
+
+## ⚙️ 3️⃣ With `virtual` destructor
+
+Now, if you mark:
+
+```cpp
+class Base {
+public:
+    virtual ~Base() { cout << "Base destroyed\n"; }
+};
+```
+
+Then, when you do:
+
+```cpp
+Base* bp = new Derived();
+delete bp;
+```
+
+The compiler generates code that:
+1️⃣ Looks up the destructor **through the vtable** (using the vptr).
+2️⃣ Finds that the **actual destructor** is `Derived::~Derived()`.
+3️⃣ Calls it — which itself calls `Base::~Base()` afterward.
+4️⃣ Calls `operator delete` with the **correct size** (that of `Derived`).
+
+✅ Derived cleaned
+✅ Base cleaned
+✅ Heap correctly freed
+
+---
+
+## 🧱 4️⃣ So, your statement is perfectly right:
+
+> “The `delete` keyword only deletes the `sizeof(type_of_pointer)` provided to it, not the actual size of the memory allocated in heap.”
+
+Exactly ✅ — unless the destructor is **virtual**, because only then the compiler *knows how to reach the right deallocation logic* for the true object type.
+
+---
+
+## ⚠️ 5️⃣ Subtle detail
+
+If you override `operator delete` in the derived class, the compiler will only call it if the destructor is **virtual**.
+Otherwise, even that will be ignored — the base’s delete operator will be used, which is another source of memory bugs.
+
+---
+
+## 🔥 TL;DR
+
+| Case        | Destructor call               | Deallocation size | Safe?       |
+| ----------- | ----------------------------- | ----------------- | ----------- |
+| Non-virtual | Static (`Base::~Base`)        | `sizeof(Base)`    | ❌ Undefined |
+| Virtual     | Dynamic (`Derived::~Derived`) | `sizeof(Derived)` | ✅ Safe      |
+

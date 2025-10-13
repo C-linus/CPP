@@ -1,0 +1,172 @@
+### Inheriting Ctors
+
+
+
+## 🧩 1. What `using Base::Base;` actually affects
+
+This syntax:
+
+```cpp
+using Base::Base;
+```
+
+**only affects constructors** — specifically **non-special** constructors of the base class.
+
+So:
+
+* ✅ It inherits normal constructors (parameterized, default, etc.)
+* ❌ It does **not** inherit or generate:
+
+  * copy constructor
+  * move constructor
+  * copy assignment operator
+  * move assignment operator
+  * destructor
+
+Those are still handled by **the compiler’s normal synthesis rules**, *not* by inheritance.
+
+---
+
+## ⚙️ 2. Let’s categorize what the compiler can synthesize automatically
+
+| Function                 | Name                  | Synthesized automatically?             | Can be inherited via `using Base::Base`?           |
+| ------------------------ | --------------------- | -------------------------------------- | -------------------------------------------------- |
+| Default constructor      | `T()`                 | ✅ (if needed and no user-defined ctor) | ✅ (if base has one and you use `using Base::Base`) |
+| Parameterized ctors      | `T(int, …)`           | ❌ (must define manually)               | ✅ (via `using Base::Base`)                         |
+| Copy constructor         | `T(const T&)`         | ✅                                      | ❌                                                  |
+| Move constructor         | `T(T&&)`              | ✅                                      | ❌                                                  |
+| Copy assignment operator | `operator=(const T&)` | ✅                                      | ❌                                                  |
+| Move assignment operator | `operator=(T&&)`      | ✅                                      | ❌                                                  |
+| Destructor               | `~T()`                | ✅                                      | ❌                                                  |
+
+So the **inheriting constructor mechanism** only copies over *user-declared base constructors* into the derived class’s overload set.
+The special member functions (`copy/move/dtor`) follow **their own synthesis rules**, separately.
+
+---
+
+## 🧠 3. How the compiler decides to synthesize *special member functions*
+
+Every class in C++ automatically gets these six “special members” if you don’t define them yourself:
+
+1. Default constructor
+2. Copy constructor
+3. Copy assignment operator
+4. Destructor
+5. (C++11+) Move constructor
+6. (C++11+) Move assignment operator
+
+But they’re only **generated if needed**, and sometimes **deleted** automatically if the compiler can’t safely create them.
+
+Example:
+
+```cpp
+class Base {
+public:
+    Base() {}
+    Base(const Base&) {}
+    Base(Base&&) {}
+    ~Base() {}
+};
+
+class Derived : public Base {
+    std::string s;
+};
+```
+
+Even though you didn’t write them for `Derived`,
+the compiler will synthesize:
+
+* `Derived(const Derived&)` → calls `Base(const Base&)` and copies `s`
+* `Derived(Derived&&)` → calls `Base(Base&&)` and moves `s`
+* `Derived::~Derived()` → calls `s.~string()` and `Base::~Base()`
+
+👉 **But these are not inherited from `Base`** — they are freshly *synthesized* for `Derived`.
+
+---
+
+## 🔬 4. Why you can’t “inherit” copy/move constructors
+
+The problem is *type safety*.
+A base class’s copy constructor has signature:
+
+```cpp
+Base(const Base&);
+```
+
+If that were inherited literally, you’d have a constructor in `Derived` that takes a `Base const&`, not a `Derived const&`.
+
+That’s dangerous — copying a `Base` subobject doesn’t copy the `Derived`-specific members.
+So the C++ designers intentionally **forbid inheriting special members** like copy/move constructors.
+
+That’s why `using Base::Base;` doesn’t bring them in.
+
+---
+
+## ⚙️ 5. Destructor and assignment operator synthesis
+
+Similarly, destructors and assignment operators are **always synthesized per-class**, because each class might have different members to destroy or assign.
+
+Example:
+
+```cpp
+class Base {
+public:
+    ~Base() { std::cout << "Base dtor\n"; }
+};
+
+class Derived : public Base {
+    std::string s;
+};
+```
+
+Even if you never write `~Derived()`, the compiler generates it as:
+
+```cpp
+Derived::~Derived() {
+    s.~basic_string();
+    Base::~Base();
+}
+```
+
+and calls both destructors automatically.
+You never need to inherit it.
+
+---
+
+## 🧬 6. When compiler *deletes* special members
+
+If a base or member is non-copyable/movable, the compiler may **delete** the derived’s version automatically.
+
+Example:
+
+```cpp
+struct NonCopyable {
+    NonCopyable(const NonCopyable&) = delete;
+};
+
+struct Derived : NonCopyable {};
+```
+
+Here, the compiler will **delete** `Derived(const Derived&)` too.
+
+---
+
+## ✅ 7. TL;DR Summary
+
+| Category            | Can be inherited via `using Base::Base;` | Auto-synthesized for Derived | Notes                            |
+| ------------------- | ---------------------------------------- | ---------------------------- | -------------------------------- |
+| Normal constructors | ✅                                        | ✅ (if needed)                | Forwards args to base            |
+| Copy constructor    | ❌                                        | ✅                            | Calls `Base(const Base&)`        |
+| Move constructor    | ❌                                        | ✅                            | Calls `Base(Base&&)`             |
+| Destructor          | ❌                                        | ✅                            | Calls member dtors and base dtor |
+| Copy assignment     | ❌                                        | ✅                            | Calls base & member copy ops     |
+| Move assignment     | ❌                                        | ✅                            | Calls base & member move ops     |
+
+So:
+
+> `using Base::Base;` is **only for non-special constructors.**
+> The rest (copy/move/dtor/operator=) are synthesized **per class**, never inherited.
+
+
+
+
