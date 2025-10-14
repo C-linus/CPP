@@ -13,3 +13,49 @@
 6. To prevent this, the compiler slices the child object, effectively removing the memory that contains its attributes.
 
 7. The object is then copied into the base object.
+
+
+
+### 🔹 Object Slicing Summary
+
+1. **Definition:**
+   Assigning or copying a derived class object to a base class object **“slices off”** the derived part.
+
+2. **Cause:**
+
+   * Base class object can only hold **its own members**.
+   * Derived-specific members and vtable info are **lost**.
+
+3. **Memory/Layout Effect:**
+
+   ```
+   Derived d: [vptr→Derived::vtable | Base members | Derived members]
+   Base b = d → [vptr→Base::vtable | Base members]
+   ```
+
+   * Derived members and Derived vptr are gone.
+
+4. **Impact on Polymorphism:**
+
+   * Virtual functions rely on the **vptr**.
+   * After slicing, `b`’s vptr points to Base::vtable → calls Base functions only.
+   * No “hierarchy walk” occurs because it’s a plain Base object.
+
+5. **Prevention:**
+
+   * Use **pointers or references** instead of concrete base objects:
+
+     ```cpp
+     Base* bp = &d;     // preserves Derived object
+     Base& br = d;      // preserves Derived object
+     ```
+
+6. **Constructors/Copy:**
+
+   * Base copy ctor only copies the **base subobject**, ignores derived.
+   * Derived part is never copied; vptr is set to **Base::vtable**.
+
+---
+
+💡 So yeah — object slicing = **loss of derived object info when converting to a concrete base object**, and that’s exactly why runtime polymorphism breaks in such cases.
+

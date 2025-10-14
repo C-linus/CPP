@@ -1,0 +1,41 @@
+### Up casting
+
+### 1️⃣ **Pointers and implicit upcasting**
+
+```cpp
+Derived d;
+Base* bp = &d;   // ✅ implicit upcast
+```
+
+* Here, you **take the address of a Derived object** and assign it to a Base pointer.
+* **No cast is needed** — C++ allows this **implicitly** because every Derived *is-a* Base.
+* The pointer `bp` now points to the **Base subobject** of `d`.
+* **Polymorphism works** if functions are virtual.
+
+---
+
+### 2️⃣ **Static cast version**
+
+```cpp
+Base* bp = static_cast<Base*>(&d);  // ✅ explicit cast
+```
+
+* This does exactly the same thing as the implicit conversion.
+* Usually you **don’t need** `static_cast` for upcasting; the compiler does it automatically.
+* It’s mainly used if you want to **document your intent** or silence some warnings.
+
+---
+
+### 3️⃣ **Important distinctions**
+
+| Expression                           | Implicit / Explicit | Polymorphism works? |
+| ------------------------------------ | ------------------- | ------------------- |
+| `Base* bp = &d;`                     | Implicit            | ✅ Yes               |
+| `Base* bp = static_cast<Base*>(&d);` | Explicit            | ✅ Yes               |
+| `Base b = d;`                        | Copy (slicing)      | ❌ No                |
+
+---
+
+So yes — `Base* bp = &d;` **is done implicitly**, no need for `static_cast`.
+
+

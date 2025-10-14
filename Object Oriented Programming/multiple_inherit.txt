@@ -1,0 +1,11 @@
+### Multiple Inheritance
+
+1. C++ allows inheritance from more than one class simultaneously.
+
+2. Known as multiple inheritance.
+
+3. Allows a class to reuse/override behaviours from  multiple classes.
+
+4. Multiple inheritance can lead to diamond inheritance
+
+5. Classes inherit from a common parent (form a diamond shape) 

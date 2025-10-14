@@ -1,0 +1,15 @@
+### Abstract Class
+
+1. At least one pure virtual function.
+2. Can contain other members (data, non-virtual functions, etc.)
+3. Cannot be instantiated, but used through a pointer or reference
+4. Establishes a contract with clients
+5. Used for creating interface
+
+### Pure Virtual Function
+
+1. Virtual function marked with = 0
+2. Does not have an implementation (optional)
+3. Cannot be invoked (except by derived classes if defined)
+4. No entry in the vtable
+5. Must be overriden by the derived classes

@@ -5,7 +5,7 @@
 
 int main()
 {
-    Savings acc("Bob",100,0.05f);
+    Checking acc("Bob",100,50);
     Transact(&acc);
     return 0;
 }

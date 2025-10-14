@@ -1,0 +1,67 @@
+### Downcasting
+
+### 1️⃣ **Definition of Downcasting**
+
+* **Downcasting** is converting a **base class pointer/reference** to a **derived class pointer/reference**.
+* This is the opposite of upcasting.
+* Example:
+
+```cpp
+Base* bp = new Derived();  // upcast, implicit
+Derived* dp = static_cast<Derived*>(bp);  // downcast, explicit
+```
+
+* Here `bp` points to a `Derived` object, but its type is `Base*`.
+* We **explicitly tell the compiler** “I know this Base* actually points to a Derived, treat it as Derived*.”
+
+---
+
+### 2️⃣ **Rules**
+
+1. **Downcasting must be explicit**:
+   C++ won’t allow implicit conversion from `Base*` → `Derived*`.
+
+   ```cpp
+   Derived* dp = bp; // ❌ ERROR
+   ```
+
+2. **Use `static_cast`** if you are certain about the type at compile time.
+
+3. **Use `dynamic_cast`** if you want runtime checking (safe).
+
+```cpp
+Derived* dp = dynamic_cast<Derived*>(bp);
+if (dp) {
+    dp->derivedFunction();
+} else {
+    // bp was not actually pointing to a Derived object
+}
+```
+
+* `dynamic_cast` works **only if the base class has at least one virtual function**.
+* It checks the **actual object type** at runtime before converting.
+
+---
+
+### 3️⃣ **Risks**
+
+* Downcasting is **dangerous** if the object is not actually a Derived.
+* It can lead to **undefined behavior** if you call members that only exist in Derived.
+
+---
+
+### 4️⃣ **Summary Table**
+
+| Casting     | Pointer type   | Safe?             | Compile-time check | Runtime check               |
+| ----------- | -------------- | ----------------- | ------------------ | --------------------------- |
+| Upcasting   | Derived → Base | ✅ Always safe     | ✅ Implicit         | N/A                         |
+| Downcasting | Base → Derived | ❌ Only if correct | ❌ Needs cast       | ✅ Optional (`dynamic_cast`) |
+
+---
+
+💡 **Key idea:**
+
+* **Upcast** = safe, implicit, Base pointer sees only Base interface.
+* **Downcast** = potentially unsafe, explicit, you’re telling compiler “trust me, it’s Derived.”
+
+
