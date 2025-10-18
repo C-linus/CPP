@@ -1,0 +1,181 @@
+### **1️⃣ What is Diamond Inheritance**
+
+00403c40 <__ZN1DC1Ev>:
+  403c40:	55                   	push   ebp
+  403c41:	89 e5                	mov    ebp,esp
+  403c43:	83 ec 28             	sub    esp,0x28
+  403c46:	89 4d f4             	mov    DWORD PTR [ebp-0xc],ecx
+  403c49:	8b 45 f4             	mov    eax,DWORD PTR [ebp-0xc]
+  403c4c:	83 c0 08             	add    eax,0x8
+  403c4f:	89 c1                	mov    ecx,eax
+  403c51:	e8 5a ff ff ff       	call   403bb0 <__ZN1AC2Ev>
+  403c56:	ba bc 51 40 00       	mov    edx,0x4051bc
+  403c5b:	8b 45 f4             	mov    eax,DWORD PTR [ebp-0xc]
+  403c5e:	89 14 24             	mov    DWORD PTR [esp],edx
+  403c61:	89 c1                	mov    ecx,eax
+  403c63:	e8 78 ff ff ff       	call   403be0 <__ZN1BC2Ev>
+  403c68:	83 ec 04             	sub    esp,0x4
+  403c6b:	ba c0 51 40 00       	mov    edx,0x4051c0
+  403c70:	8b 45 f4             	mov    eax,DWORD PTR [ebp-0xc]
+  403c73:	83 c0 04             	add    eax,0x4
+  403c76:	89 14 24             	mov    DWORD PTR [esp],edx
+  403c79:	89 c1                	mov    ecx,eax
+  403c7b:	e8 78 ff ff ff       	call   403bf8 <__ZN1CC2Ev>
+  403c80:	83 ec 04             	sub    esp,0x4
+  403c83:	ba d4 51 40 00       	mov    edx,0x4051d4             // D has different vtable for it's each base class D's vtable for B
+  403c88:	8b 45 f4             	mov    eax,DWORD PTR [ebp-0xc]
+  403c8b:	89 10                	mov    DWORD PTR [eax],edx
+  403c8d:	ba e0 51 40 00       	mov    edx,0x4051e0             // D has different vtable for it's each base class D's vtable for C
+  403c92:	8b 45 f4             	mov    eax,DWORD PTR [ebp-0xc]
+  403c95:	89 50 04             	mov    DWORD PTR [eax+0x4],edx
+  403c98:	90                   	nop
+  403c99:	c9                   	leave  
+  403c9a:	c3                   	ret 
+
+
+It is becuase, the base classes which are not start at the start offset of the d object requires this pointer adjusment, differntly based on their offset in object's memory layout, the compiler generates thunks, which adjusts the this pointer accordingly for each base class.
+
+Example:-
+'''
+00403ca0 <__ZThn4_N1D3fooEv>: 
+  403ca0: 83 e9 04 sub ecx,0x4 
+  403ca3: e9 84 ff ff ff jmp 403c2c <__ZN1D3fooEv> 
+  403ca8: 66 90 xchg ax,ax 
+  403caa: 66 90 xchg ax,ax 
+  403cac: 66 90 xchg ax,ax 
+  403cae: 66 90 xchg ax,ax
+'''
+
+Diamond inheritance occurs when a class hierarchy forms a diamond shape:
+
+```
+     A
+    / \
+   B   C
+    \ /
+     D
+```
+
+* `B` and `C` both inherit from `A` (usually virtual to avoid duplicate `A`).
+* `D` inherits from both `B` and `C`.
+* Without `virtual`, D would have **two copies of A** → **ambiguity / duplication problem**.
+
+**Problem solved by virtual inheritance:**
+
+* Virtual inheritance ensures **only one shared A exists** inside D, avoiding duplication.
+
+---
+
+## **2️⃣ Problem in diamond inheritance**
+
+1. **Multiple subobjects**:
+
+   * B-subobject and C-subobject are separate, each with their own vptr.
+   * Virtual base A is shared.
+
+2. **Virtual functions**:
+
+   * Each subobject has its own vtable.
+   * Functions in B and C that are overridden in D need to account for **different this pointer offsets**.
+
+3. **Polymorphism complexity**:
+
+   * Calling a virtual function through different subobject pointers (B*, C*, A*) requires **correct function pointer and correct this pointer**.
+
+---
+
+## **3️⃣ How the compiler handles diamond inheritance**
+
+From your disassembly study:
+
+* **Each subobject has its own vptr** inside D:
+
+| Subobject      | vptr points to         |
+| -------------- | ---------------------- |
+| B-subobj       | D’s B-subobject vtable |
+| C-subobj       | D’s C-subobject vtable |
+| Virtual base A | D’s A vtable           |
+
+* **Why separate vtables for B and C?**
+
+  1. B-subobject might be at offset 0 → direct function pointer to D::foo.
+  2. C-subobject is at non-zero offset → function pointer must go through a **thunk** to adjust `this`.
+  3. Each vtable is **D-specific**, with proper function pointers / thunks for that subobject.
+
+* **Thunks**: small compiler-generated functions that:
+
+  * Adjust `this` pointer for non-primary subobjects.
+  * Jump to the actual function implementation (e.g., D::foo).
+
+---
+
+## **4️⃣ How overriding works**
+
+* If **B::foo()** and **C::foo()** have the same signature:
+
+```cpp
+class D : public B, public C {
+public:
+    void foo() override { ... }
+};
+```
+
+* The compiler generates:
+
+  * **B-subobject vtable** → foo = D::foo (direct)
+  * **C-subobject vtable** → foo = thunk → adjusts `this` → jumps to D::foo
+
+* **Single function D::foo** in memory overrides **both subobjects**, even though vtables differ.
+
+* **Virtual calls** resolve through the subobject’s vptr:
+
+  ```cpp
+  B* pb = &d; pb->foo(); // B-subobject vtable → D::foo
+  C* pc = &d; pc->foo(); // C-subobject vtable → thunk → D::foo
+  ```
+
+---
+
+## **5️⃣ Memory layout summary (simplified)**
+
+```
++------------------+
+| B-subobject       | vptr -> D’s B vtable
++------------------+
+| C-subobject       | vptr -> D’s C vtable (with thunk)
++------------------+
+| shared virtual A  | vptr -> D’s A vtable
+|   x              |
++------------------+
+```
+
+* **Separate vtables** allow correct **virtual function dispatch** and **`this` adjustments**.
+* Virtual base ensures only **one A exists**.
+
+---
+
+## **6️⃣ Key takeaways from your disassembly study**
+
+1. **D constructor** passes **precomputed vtable pointers** to B and C subobjects.
+2. **Each subobject gets its own vptr**, pointing to a **D-specific vtable**.
+3. **Vtables differ** because:
+
+   * Function pointers may need **thunks for `this` adjustment**.
+   * Offset from subobject to virtual base differs.
+4. **Thunks** are used when the subobject is not at offset 0 to adjust `this`.
+5. **Single D::foo can override multiple base functions**, because vtables for each subobject can point to **same function or thunk**.
+6. **Polymorphism works** correctly through all subobject pointers (B*, C*, A*) due to separate vtables + thunks.
+
+---
+
+✅ **Conclusion**
+
+* Diamond inheritance complexity arises from **shared virtual bases + multiple subobjects**.
+* C++ solves it using:
+
+  * **Virtual inheritance** (one shared base)
+  * **Multiple subobject vtables**
+  * **Thunks for `this` adjustment**
+* Even if a single function overrides multiple bases, **separate vtables are needed** to correctly handle **this pointer offsets** in multiple inheritance.
+
+
