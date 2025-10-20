@@ -1,0 +1,106 @@
+### Exception handling tables
+
+Meta data used by runtime to perform stack unwinding.
+
+## 1️⃣ What are stack unwinding tables?
+
+When a C++ exception is thrown, the runtime needs to **walk back the call stack** and call destructors for fully constructed objects. To do this **safely**, it relies on **metadata stored in the binary**. These metadata are called **stack unwinding tables**.
+
+They contain:
+
+1. **Ranges of instructions** for each function (start and end addresses).
+2. **What objects were constructed at each point**.
+3. **What destructors to call if an exception occurs**.
+4. **Landing pads** — addresses of exception handlers (`catch` blocks).
+5. **Type info** — which exception types each handler can catch.
+
+Think of it as a **map for the runtime**:
+
+> “If an exception occurs while executing instructions 0x401000–0x401050 in function f(), destroy these objects, then jump to this catch block if type matches…”
+
+---
+
+## 2️⃣ How it is used
+
+When an exception is thrown:
+
+1. Runtime looks up the **current instruction pointer** in the unwinding tables.
+2. Determines which destructors to call for fully constructed objects in the current stack frame.
+3. Calls destructors in **reverse order of construction**.
+4. Moves to the caller frame, repeats using the tables there.
+5. When a matching `catch` is found, jumps to its landing pad.
+
+---
+
+## 3️⃣ Where are these tables stored in the binary?
+
+It depends on platform and compiler:
+
+### On Linux / ELF binaries:
+
+(raw data tables)
+
+
+* Stored in **.eh_frame** section (or .gcc_except_table)
+* Usually contains:
+
+  * `.eh_frame_hdr` — header for fast lookup
+  * `.eh_frame` — actual unwind info (DWARF format)
+* Example of section in `readelf -S`:
+
+```
+[Nr] Name      Type          Addr     Off    Size   ES Flg Lk Inf Al
+...
+[25] .eh_frame PROGBITS      0000000000401000  001000  00350  0  AX  0  0  8
+```
+
+### On Windows / PE binaries (MSVC / MinGW):
+
+(raw data tables)
+
+* Stored in **.pdata / .xdata sections**.
+
+* `.pdata` — contains function address ranges.
+
+* `.xdata` — contains unwind codes (instructions for unwinder, destructors, landing pads).
+
+* For MinGW / MSVC, the unwinder uses **SEH (Structured Exception Handling)** tables:
+
+```
+PE Sections:
+- .pdata → array of runtime function entries (start/end addresses)
+- .xdata → unwind codes for each function
+```
+
+---
+
+## 4️⃣ How it looks conceptually
+
+```
+Function f() at 0x401000–0x401050
+
+Unwind table entry:
+
+[Start: 0x401000, End: 0x401050]
+  Locals:
+    a -> call ~A()
+    b -> call ~B()
+  Landing pads:
+    catch(std::runtime_error) -> 0x402000
+    catch(...) -> 0x402050
+  Type info: RTTI pointer for exception type
+```
+
+* Runtime walks these tables **at throw-time** to clean up stack.
+* These tables are **read-only data in the binary**, separate from actual code.
+
+---
+
+## 5️⃣ Key insight
+
+* Stack unwinding tables are **metadata** the compiler generates for exception handling.
+* They are **static**, stored in a special section of the binary.
+* Runtime **does not guess what to destroy** — it reads these tables.
+* Without these tables, **C++ exceptions with destructors cannot work** (except `noexcept` or trivial functions).
+
+

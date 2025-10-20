@@ -1,0 +1,11 @@
+### noexcept keyword
+
+1. Applied to functions (both in declaration & definition)
+2. Indicates the function does not throw exceptions
+3. Compiler can optimize the function code
+    1. no need to generate stack unwinding code
+4. An exception from such function terminates the program.
+    1. stack may or may not be unwinded
+5. Not all functions should use noexcept specifier
+    1. especially functions calling other functions (in library)
+    2. such functions will be exception-neutral.

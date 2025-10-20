@@ -1,0 +1,204 @@
+### **C++ Exception Handling Internals: Deep Dive**
+
+We are working with this scenario:
+
+```cpp
+void inner() { 
+    throw std::runtime_error("Something broke"); 
+}
+void middle() { inner(); }
+int main() { 
+    try { middle(); } 
+    catch (const std::exception& e) { /* ... */ }
+}
+```
+
+---
+
+## **1️⃣ Throwing an exception**
+
+### Code behavior
+
+```cpp
+throw std::runtime_error("Something broke");
+```
+
+### Steps at runtime
+
+1. **Allocate exception object** on the heap:
+
+```asm
+call ___cxa_allocate_exception
+```
+
+* Why heap?
+
+  * Stack frames above `inner()` will be destroyed during unwinding.
+  * Heap allocation ensures the object remains valid while unwinding occurs.
+
+2. **Construct the exception object**:
+
+```asm
+call runtime_error::runtime_error(const char*)
+```
+
+* Initializes the exception (sets message, vtable, etc.).
+* Now the object exists on the heap, separate from the current stack frame.
+
+3. **Call `__cxa_throw`**:
+
+```asm
+call ___cxa_throw(exception_ptr, type_info*, destructor_ptr)
+```
+
+* Arguments:
+
+| Argument       | Description                                        |
+| -------------- | -------------------------------------------------- |
+| exception_ptr  | Pointer to the heap exception object               |
+| type_info*     | RTTI info (used for `catch` matching)              |
+| destructor_ptr | Pointer to the destructor to call during unwinding |
+
+* `__cxa_throw` prepares **exception metadata**:
+
+```c
+struct __cxa_exception {
+    std::type_info* type;   // type info
+    void (*destructor)(void*);
+    unsigned int flags;
+    ...
+};
+```
+
+* Stored in memory just before the exception object.
+
+---
+
+## **2️⃣ Stack unwinding**
+
+### `_Unwind_RaiseException`
+
+* Called by `__cxa_throw` to **walk the call stack**.
+* Goal: **find a matching catch block**.
+* Uses **unwind tables** (`.eh_frame` in ELF / SEH in Windows) — these describe:
+
+  * Function start/end addresses
+  * Stack frame size
+  * Local objects and their destructors
+
+### What it does:
+
+1. For each stack frame from top to bottom:
+
+   * Call destructors for local objects.
+   * Check if the frame has a matching `catch(type)` using RTTI.
+
+2. Stop if a matching handler is found.
+
+3. If none is found, call `std::terminate()`.
+
+> Important: `_Unwind_RaiseException` **does not literally execute `leave`/`ret` repeatedly**.
+> It **manipulates the stack pointer and instruction pointer**, simulating the effect of returning from functions.
+
+---
+
+### `__Unwind_Resume`
+
+* Called when:
+
+  1. A handler has been found and stack needs cleanup **to reach the handler**.
+  2. A **rethrow** occurs (`throw;` inside a catch).
+
+* Purpose: **continue stack unwinding without searching**.
+
+* Reads exception metadata (type_info, destructor) and calls destructors for any remaining frames.
+
+---
+
+## **3️⃣ Exception object and type info**
+
+* **Heap allocation** ensures exception object survives unwinding.
+* **`std::type_info*`** allows runtime type matching:
+
+```cpp
+catch(const std::exception& e)
+```
+
+* The runtime compares `type_info` of thrown object vs. catch block type.
+* **No upcasting happens automatically**; only references/pointers can catch derived exceptions via base type.
+* Metadata stored in the `__cxa_exception` header ensures correct destructor calls.
+
+---
+
+## **4️⃣ Summary of assembly flow**
+
+### `inner()` compiled disassembly:
+
+```asm
+call ___cxa_allocate_exception  ; allocate object on heap
+call runtime_error::runtime_error ; construct object
+call ___cxa_throw               ; throw
+```
+
+### Inside `__cxa_throw`:
+
+```asm
+mov [ebx+offset], type_info
+mov [ebx+offset], destructor
+call __Unwind_RaiseException     ; search for handler & unwind stack
+call __Unwind_Resume             ; if rethrow or continue cleanup
+```
+
+### `_Unwind_RaiseException` / `_Resume`:
+
+* Walk stack frames using unwind tables.
+* Call destructors.
+* Jump directly to catch block (manipulate CPU registers).
+* If no handler → terminate.
+
+---
+
+## **5️⃣ Key Concepts to Remember**
+
+| Concept                                  | Details                                                              |
+| ---------------------------------------- | -------------------------------------------------------------------- |
+| **Heap allocation**                      | Needed to survive stack unwinding.                                   |
+| **Exception header (`__cxa_exception`)** | Stores type_info, destructor, flags, etc.                            |
+| **`__cxa_throw`**                        | Prepares metadata and starts unwinding.                              |
+| **`_Unwind_RaiseException`**             | Walks stack, calls destructors, finds handler.                       |
+| **`__Unwind_Resume`**                    | Continues cleanup or rethrow.                                        |
+| **No literal `leave/ret` loop**          | Stack is manipulated via registers; destructors called via metadata. |
+| **type_info**                            | Used to check if catch matches thrown object.                        |
+
+---
+
+## **6️⃣ Visualization (memory layout)**
+
+```
+Heap:
+[__cxa_exception header]
+[type_info*]  
+[destructor*]  
+[exception object (runtime_error)]
+
+Stack (before catch):
+
+inner locals
+middle locals
+main locals
+```
+
+* `_Unwind_RaiseException` walks the stack **logically**, calling destructors.
+* Catch block is reached by **register/SP manipulation**, not by executing all instructions.
+
+---
+
+✅ **Bottom line:**
+
+1. Throw → allocate + construct + prepare header.
+2. `_Unwind_RaiseException` → search + unwind + destructors.
+3. Matching catch → jump.
+4. `__Unwind_Resume` → cleanup remainder or rethrow.
+5. Exception object lives on heap; metadata enables type matching and cleanup.
+
+
