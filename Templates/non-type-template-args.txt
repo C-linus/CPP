@@ -1,0 +1,176 @@
+### Nontype Template Arguments
+
+1. **Definition:** A *nontype template argument* (NTTA) is a template parameter that represents a value rather than a type. The value is provided at compile-time.
+
+2. **Requirements:**
+
+   * Must be a **constant expression** (evaluated at compile time).
+   * Valid types include:
+
+     * Integral types (`int`, `char`, `bool`, etc.)
+     * Enumeration types (`enum`)
+     * Pointers to objects or functions with static linkage
+     * References to objects with external linkage
+     * `nullptr`
+   * Cannot be arbitrary runtime values.
+
+3. **Role:**
+
+   * They become part of the template *type*, meaning each distinct value creates a distinct instantiation.
+   * Example:
+
+     ```cpp
+     template<int N>
+     struct Array {
+         int data[N];
+     };
+
+     Array<5> a; // distinct from Array<10>
+     ```
+
+4. **Usage Examples:**
+
+   * Arrays of fixed size: `std::array<int, 10>`
+   * Compile-time indexing
+   * `std::begin` and `std::end` rely on template machinery, sometimes using NTTA for arrays:
+
+     ```cpp
+     template <typename T, size_t N>
+     constexpr T* begin(T (&arr)[N]) noexcept { return arr; }
+     template <typename T, size_t N>
+     constexpr T* end(T (&arr)[N]) noexcept { return arr + N; }
+     ```
+
+     Here, `N` is a **nontype template parameter** representing array size.
+
+Alright, let’s break this down **carefully and logically**. Nontype template arguments (NTTAs) can be confusing because the rules seem arbitrary at first, but they all come down to **“the compiler must know the value at compile time”**. I’ll go type by type with examples.
+
+---
+
+### 1. **Integral types (`int`, `char`, `bool`, etc.)**
+
+These are the most common NTTAs. The value must be **known at compile time**.
+
+```cpp
+template<int N>
+struct Array {
+    int data[N];
+};
+
+Array<5> a;   // OK, 5 is a constant expression
+// Array<2 + 3> b; // also OK, 2 + 3 is evaluated at compile time
+// int x = 10;
+// Array<x> c;  // ERROR, x is not constexpr, value not known at compile time
+```
+
+✅ Key point: Anything computable at compile time is allowed.
+
+---
+
+### 2. **Enumeration types (`enum`)**
+
+```cpp
+enum Color { Red, Green, Blue };
+
+template<Color C>
+struct Widget {
+    void print() { /* ... */ }
+};
+
+Widget<Red> w;  // OK
+// Widget<Color(5)> w2; // depends if value is valid in enum, usually allowed if within range
+```
+
+Enums are allowed because they are essentially **integers with named constants**.
+
+---
+
+### 3. **Pointers to objects or functions with static linkage**
+
+Static linkage means the object/function exists **throughout the program** and the compiler knows its address at compile time.
+
+```cpp
+int global_var = 42;           // static linkage (at global scope)
+int global_func() { return 1; }
+
+template<int* Ptr>
+struct PtrWrapper {
+    int get() { return *Ptr; }
+};
+
+PtrWrapper<&global_var> pw;    // OK, address known at compile time
+PtrWrapper<&global_func> pf;   // OK, function pointer also allowed
+
+// int local_var = 10;
+// PtrWrapper<&local_var> pl;  // ERROR, local_var address not constant at compile time
+```
+
+✅ Key point: The compiler must know the **exact address** at compile time. Local variables inside functions do **not** qualify.
+
+---
+
+### 4. **References to objects with external linkage**
+
+References can also be NTTAs if the referred object exists at compile time (global/static/external).
+
+```cpp
+int external_var = 99;
+
+template<int& Ref>
+struct RefWrapper {
+    int get() { return Ref; }
+};
+
+RefWrapper<external_var> rw;   // OK
+```
+
+References are basically “aliases” for objects, so the same rules as pointers apply.
+
+---
+
+### 5. **`nullptr`**
+
+You can pass `nullptr` as a nontype argument:
+
+```cpp
+template<void* Ptr>
+struct NullCheck {
+    static bool isNull() { return Ptr == nullptr; }
+};
+
+NullCheck<nullptr> nc;  // OK
+```
+
+---
+
+### 6. **Cannot be arbitrary runtime values**
+
+The **compiler must know the value at compile time**, so anything computed **only at runtime** is invalid:
+
+```cpp
+int foo() { return 42; }
+template<int N>
+struct X {};
+
+X<foo()> a;  // ERROR, foo() is evaluated at runtime
+```
+
+Even if the function returns a constant value, the compiler cannot guarantee it **without `constexpr`**:
+
+```cpp
+constexpr int bar() { return 42; }
+X<bar()> b;  // OK
+```
+
+---
+
+### 🔑 Summary
+
+* NTTAs are **compile-time constants**.
+* They can be integral, enum, pointer, reference, or nullptr.
+* Anything dynamic, like local variables or runtime functions, **cannot be used**.
+* The compiler essentially embeds the value or address into the template type itself.
+
+
+
+

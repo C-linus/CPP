@@ -1,0 +1,101 @@
+### 🔹 constexpr Summary 
+
+### 1️⃣ What it is
+
+* `constexpr` tells the compiler:
+
+  > “This variable, function, or constructor **can** be evaluated at compile time if all inputs are constant expressions.”
+* Guarantees **compile-time evaluability**, **not** storage or memory elimination.
+
+---
+
+### 2️⃣ Variables
+
+* **Local `constexpr`**:
+
+  * Value is **known at compile time**.
+  * **Memory is still allocated on the stack** like normal local variables.
+  * Compiler may still optimize usages as literals in expressions, but the stack slot exists if the variable is used.
+* **Global `constexpr`**:
+
+  * Typically stored in `.rdata` because it may need an address.
+* **Address taken?**
+
+  * Forces storage in memory (read-only `.rdata`), as usual.
+* **Key point:** `constexpr` guarantees the value is compile-time known, not that storage is eliminated.
+
+```cpp
+constexpr int x = 42;          // value known at compile time
+constexpr int* px = &x;        // stored in .rdata so address exists
+```
+
+---
+
+### 3️⃣ Functions
+
+* `constexpr` functions:
+
+  * Must be **pure, side-effect-free**, deterministic.
+  * Can be evaluated at compile time if arguments are constant.
+  * Can also be used at runtime if arguments are not constant.
+* **Dual-purpose**: compile-time evaluation or normal runtime execution.
+
+```cpp
+constexpr int square(int x) { return x*x; }
+constexpr int a = square(5);  // compile-time
+int n; std::cin >> n;
+int b = square(n);            // runtime
+```
+
+---
+
+### 4️⃣ Constructors / Objects
+
+* `constexpr` constructors allow creating **compile-time usable objects**.
+* Even if values are known at compile time, **local objects still occupy stack memory**.
+* Compiler may use literals in expressions, but the variable’s stack slot may remain if needed.
+* If you take the **address**, compiler may store it in `.rdata`.
+
+```cpp
+struct Point { int x, y; constexpr Point(int a, int b) : x(a), y(b) {} };
+constexpr Point p(2, 3);         // values known at compile time, stack allocated
+constexpr int s = p.x + p.y;     // evaluated at compile time
+```
+
+---
+
+### 5️⃣ Templates + `constexpr`
+
+* Works perfectly with non-type template arguments (NTTA).
+* Compiler can evaluate template functions/objects entirely at compile time.
+* Ensures **zero runtime computation** for the value, but local variables may still occupy stack if declared inside functions.
+
+```cpp
+template<int N>
+constexpr int multiply_by_two() { return N*2; }
+constexpr int val = multiply_by_two<10>(); // compile-time constant
+```
+
+---
+
+### 6️⃣ Key points about storage and the call stack
+
+| Case                            | Storage? | Notes                                          |
+| ------------------------------- | -------- | ---------------------------------------------- |
+| Local `constexpr`               | ✅ stack  | Value known at compile time, but memory exists |
+| Local `constexpr` address taken | ✅ .rdata | Stored in read-only memory                     |
+| Global `constexpr`              | ✅ .rdata | Stored in read-only memory                     |
+| Non-`constexpr`                 | ✅ stack  | Standard runtime allocation                    |
+
+* **Call stack is still used** for local `constexpr` variables.
+* The compile-time known value only affects **value computation**, not memory allocation.
+
+---
+
+### 7️⃣ TL;DR
+
+* `constexpr` = **value is known at compile time**.
+* Guarantees compile-time evaluation, **does not eliminate memory allocation** for local variables.
+* Compiler may still optimize usages into literals, but stack memory may still exist.
+* Global or address-taken `constexpr` variables go into `.rdata`.
+

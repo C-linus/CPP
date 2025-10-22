@@ -1,0 +1,35 @@
+### File I/O
+
+1. C++ provides support for file I/O through following classes
+    1.ofstream - write to an output stream
+    2.ifstream - read from an input stream
+    3.fstream - write/read stream
+
+2.Include <fstream> header
+3.All classes can be used for both text & binary I/O
+4.Additionally, they support modes that decide how the file is opened and operated.
+5.is_open() function returns a boolean indicating if a stream is open.
+
+
+### File Open modes
+
+1. The following modes canbe used while opening a file
+2. These are constants defined in std::ios_base class
+3. Some modes can be combined e.g. std::ios::in | std::ios::out, etc
+
+s.no    Mode    Meaning
+1.      app     seek to the end before each write operation
+2.      binary  open in binary mode
+3.      in      open for reading (default for ifstream)
+4.      out     open for writing (default for ofstream)
+5.      trunc   discard file contents before opening
+6.      ate     seek to end after open
+
+
+### Stream State Flags
+
+s.no    Flag            Meaning                             Function
+1.      goodbit         no error                            bool good()
+2.      badbit          irrecoverable stream error          bool bad()
+3.      failbit         I/O operation failed                bool fail() [operator !]
+4.      eofbit          end of file reached during input    bool eof()

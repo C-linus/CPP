@@ -1,0 +1,117 @@
+### **1. What is `sizeof...`**
+
+`sizeof...` is an operator that gives the **number of elements in a template parameter pack**:
+
+```cpp
+template<typename... Args>
+void printSize() {
+    std::cout << sizeof...(Args) << "\n";
+}
+```
+
+* Works on **template parameter packs** (`Args...`)
+* Returns a **compile-time constant** of type `std::size_t`
+
+Example:
+
+```cpp
+printSize<int, double, char>(); // prints 3
+```
+
+* `sizeof...(Args)` = 3
+* Evaluated **at compile-time**, no runtime overhead
+
+---
+
+# **2. Syntax**
+
+```cpp
+sizeof...(pack_name)
+```
+
+* `pack_name` → **template parameter pack**
+* Can be used in expressions, static asserts, or fold expressions
+
+---
+
+# **3. Examples**
+
+### **A. Function template with variadic arguments**
+
+```cpp
+template<typename... Args>
+void printCount(Args... args) {
+    std::cout << sizeof...(args) << "\n"; // number of function arguments
+}
+
+printCount(1, 2.5, "hello"); // prints 3
+printCount();                // prints 0
+```
+
+* Can use **function parameter pack** (`args...`) or **template parameter pack** (`Args...`)
+
+---
+
+### **B. Conditional compilation / static_assert**
+
+```cpp
+template<typename... Args>
+void requireAtLeastOne() {
+    static_assert(sizeof...(Args) > 0, "Need at least one argument");
+}
+```
+
+* **Compile-time safety check**
+* Won’t compile if no template arguments are provided
+
+---
+
+### **C. Combined with fold expressions**
+
+```cpp
+template<typename... Args>
+auto sum(Args... args) {
+    return (args + ... + 0);          // fold sum
+}
+
+template<typename... Args>
+void printCountAndSum(Args... args) {
+    std::cout << "Count: " << sizeof...(Args) << "\n";
+    std::cout << "Sum: " << sum(args...) << "\n";
+}
+```
+
+* `sizeof...(Args)` gives **number of template arguments**
+* Fold expression computes sum of all arguments
+
+---
+
+# **4. Key points / rules**
+
+1. Works **only with parameter packs** (template or function).
+2. Returns **size_t**, evaluated **at compile-time**.
+3. Safe with **empty packs** → returns 0.
+4. Often used for **loop unrolling, static asserts, and fold expressions**.
+
+---
+
+# **5. Memory / Runtime**
+
+* `sizeof...` → purely **compile-time**
+* No loops, no recursion, no runtime overhead
+* Can be used in **array sizes**, e.g.:
+
+```cpp
+template<typename... Args>
+int arr[sizeof...(Args)]; // array with size = number of args
+```
+
+---
+
+# **6. TL;DR**
+
+* `sizeof...` ≈ “how many things are in this template/function pack”
+* Evaluated **at compile-time**, zero-cost
+* Useful for **compile-time checks, fold expressions, array sizes, and recursion limits**
+
+

@@ -1,0 +1,77 @@
+### Templates
+
+1. Generalizes software components
+2. Such components can be reused in different situations.
+3. Operate of any kind of data
+4. High performance algorithms & classes
+5. Compile time; no runtime costs are involved
+6. Libraries such as ATL,WTL,Boost,POCO,ACE,etc. use templates for implementation.
+
+### Function Templates
+
+1. Function that accepts template type arguments.
+2. Always begins with template keyword
+3. Template type argument is called type name
+4. Type name is a placeholder for the actual type.
+5. Can accept any type
+6. The template type can be used as return type
+
+typename -> Template parameter list
+template<typename T>
+T Function(T arg)
+{
+    // Implementation
+}
+
+### Template Argument Deduction
+
+1. Process of deducing the types
+2. Each function argument is examined
+3. The corresponding type argument is deduced fromm the argument.
+4. The type argument deduction should lead to same type.
+5. Type conversions are not performed
+6. After deduction, the template is instantiated
+7. Override deduction by specifying types in template argument list Max<int>(3,5);
+
+### Template Instantiation
+
+1. A template function or class only acts as a blueprint
+2. The compiler generates code from the blueprint at compile time
+3. Known as template instantiation
+4. Occurs implicitly when
+    1. A function template is invoked
+    2. Taking address of a function template
+    3. using explicit instantiation
+    4. creating explicit specialization  
+
+5. Full definition of template should be available
+6. Define in header file
+
+### Explicit Specialization
+
+1. Template specialized for a particular type
+2. Provides correct semantics for some datatype
+3. Or implement an algorithm optimally for a specific type
+4. Explicitly specialized functions must be defined in .cpp
+5. Primary template definition should occur before specialization.
+
+Syntax:-
+    1. Explicit Instantiation
+        template return_type function_name(arg_type X, arg_type Y);
+
+    2. Explicit Specialization
+        template<> return_type function_name<specialized_type>(arg_type X, arg_type Y);
+
+Example:-
+    1. Explicit Instantiation
+        template char Max(char X, char Y);
+
+    2. Explicit Specialization
+        template<> const char* Max<const char*>(cnost char* X, cnost char* Y);
+
+### Nontype Template Arguments
+
+1. Expression that is computed at compile time within a template argument list.
+2. Must be const expression (addresses, references, integrals, nullptr, enums)
+3. Part of the template type
+4. Used by std::begin & std::end functions

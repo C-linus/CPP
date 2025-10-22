@@ -22,11 +22,14 @@ Integer::Integer()
 Integer::Integer(int value)
 {
     m_pInt = new int(value);
+    std::cout<<"param ctor"<<std::endl;
 }
 
 Integer::Integer(const Integer& obj)
 {
     m_pInt = new int(*(obj.m_pInt));
+    std::cout<<"copy ctor"<<std::endl;
+
 }
 
 
@@ -49,9 +52,9 @@ Integer::~Integer()
 int main()
 {
 
-    Integer i(5);
-    Integer i2(i);
+    Integer i = 5;
+    //Integer i2(i);
     std::cout << i.GetValue() << std::endl;
-    std::cout <<i2.GetValue() << std::endl;
+    //std::cout <<i2.GetValue() << std::endl;
     return EXIT_SUCCESS;
 }
