@@ -1,0 +1,120 @@
+### 🔹 1. Conceptual similarity
+
+Both **class templates** and **function templates** are **blueprints**.
+They define a *pattern* for generating actual code when you instantiate them with specific types.
+So, both rely on **compile-time code generation (template instantiation)**.
+
+But that’s where the similarity mostly ends.
+
+---
+
+### 🔹 2. The key differences under the hood
+
+#### **A. Instantiation rules**
+
+* **Function templates** can use **template argument deduction**.
+
+  ```cpp
+  template <typename T>
+  void print(T x) { std::cout << x; }
+
+  print(10); // compiler deduces T = int
+  ```
+
+  The compiler infers the template argument from the function parameters.
+
+* **Class templates** have **no argument deduction** (until C++17 with CTAD – Class Template Argument Deduction, which is limited).
+
+  ```cpp
+  template <typename T>
+  class Box { public: T value; };
+
+  Box<int> b;  // must specify <int>
+  // Box b(5);  // only works in C++17+ if deduction guides exist
+  ```
+
+So, function templates require deduction logic; class templates don’t — their instantiation is triggered *explicitly* or via deduction guides.
+
+---
+
+#### **B. Name lookup and overload resolution**
+
+* For **function templates**, the compiler performs **overload resolution** between:
+
+  * non-template functions,
+  * and template instantiations (possibly multiple).
+
+  Example:
+
+  ```cpp
+  void f(int);
+  template <typename T> void f(T);
+  f(10); // calls non-template f(int)
+  ```
+
+  The compiler must **instantiate candidates** and then choose the best match.
+
+* **Class templates** don’t participate in overload resolution at all — they’re just **types**, not callable entities.
+
+So under the hood, function templates require a **template deduction + overload resolution engine**, while class templates are handled more like **parameterized type generators**.
+
+---
+
+#### **C. Code generation**
+
+* **Class template instantiation** creates:
+
+  * a *new type* (e.g., `Box<int>` is a distinct type from `Box<float>`),
+  * and may generate member function definitions.
+
+  Think of it as creating a *new class definition* for every distinct parameter set.
+
+* **Function template instantiation** generates:
+
+  * a *new function* with concrete types substituted.
+
+  Think of it as creating a *new function body* for every unique parameter combination used.
+
+---
+
+#### **D. Linkage and ODR (One Definition Rule)**
+
+* With class templates, the compiler may instantiate **members lazily** (only the ones used).
+* With function templates, the entire function is instantiated when called.
+* The linker deduplicates identical instantiations across translation units (using COMDAT sections or equivalent).
+
+---
+
+### 🔹 3. Summary (mental model)
+
+| Feature             | Function Template    | Class Template       |
+| ------------------- | -------------------- | -------------------- |
+| Purpose             | Generate functions   | Generate types       |
+| Argument deduction  | Automatic            | Manual (except CTAD) |
+| Overload resolution | Yes                  | No                   |
+| Instantiation       | When called          | When type is used    |
+| Creates             | Concrete function    | Concrete class/type  |
+| Linkage             | Deduped at link time | Deduped at link time |
+
+---
+
+### 🔹 4. Under the hood (compiler perspective)
+
+Both kinds of templates exist only in the **compiler’s front-end**:
+
+* The compiler stores them as **AST blueprints** (Abstract Syntax Trees) with type parameters.
+* During instantiation, it performs **template substitution** → generates specialized AST → compiles normally.
+* After that, the back-end sees *normal code* (no templates).
+
+The main difference is *what kind of entity* the instantiated code represents:
+
+* Function templates → code symbols.
+* Class templates → type definitions.
+
+---
+
+**In short:**
+They *both* rely on compile-time instantiation machinery, but the compiler’s internal processes for **deduction**, **overload resolution**, and **type creation** are very different.
+Function templates create *code*; class templates create *types*.
+So no, they don’t work *the same under the hood* — just the same *in spirit*.
+

@@ -1,0 +1,136 @@
+### **1. Two kinds of packs**
+
+| Pack      | What it is                       | Example                                |
+| --------- | -------------------------------- | -------------------------------------- |
+| `Args...` | Template parameter pack (types)  | `Args... = {int, double, std::string}` |
+| `args...` | Function parameter pack (values) | `args... = {5, 3.14, "hello"}`         |
+
+* **Rule:** `Args...` → can only appear where **types are allowed**
+* **Rule:** `args...` → can only appear where **values are needed**
+
+---
+
+# **2. Where to put `...` (pack expansion)**
+
+You use `...` **after an expression involving a pack**, so the compiler can expand it into multiple comma-separated expressions.
+
+### **Syntax**
+
+```cpp
+expression_involving_pack...
+```
+
+* Example with function arguments:
+
+```cpp
+f(args)...  // expands to f(arg1), f(arg2), f(arg3)
+```
+
+* Example with `std::forward`:
+
+```cpp
+std::forward<Args>(args)...  // expands to std::forward<Arg1>(arg1), ...
+```
+
+* Example with fold expressions:
+
+```cpp
+((std::cout << args << "\n"), ...)  // right fold over comma
+```
+
+---
+
+# **3. When to use `...`**
+
+* **Function calls with variadic arguments:**
+
+```cpp
+foo(args)...          // forward all args to foo
+std::make_unique<T>(args)...  // pass all constructor arguments
+```
+
+* **Fold expressions (for operations on all args):**
+
+```cpp
+sum(args...)           // simple expansion in fold
+((do_something(args)), ...) // perform action on all args
+```
+
+* **Type contexts with template packs:**
+
+```cpp
+std::tuple<Args...> t;    // use types to create tuple
+class Derived : Base<Args...> {};  // inherit from type pack
+```
+
+---
+
+# **4. When NOT to use `...`**
+
+* You **cannot put `...` after a type alone** in a function call:
+
+```cpp
+std::make_unique<T>(Args...) // ❌ invalid
+```
+
+* You **cannot put `...` just anywhere** — it must expand a pack.
+
+---
+
+# **5. Quick mental model**
+
+1. **Expression pack expansion:**
+
+```cpp
+expression_with_pack... → expression1, expression2, expression3
+```
+
+2. **Type pack usage:**
+
+```cpp
+Args... → only used in type contexts (tuple, inheritance, array types)
+```
+
+3. **Value pack usage:**
+
+```cpp
+args... → only used in runtime expressions (function calls, fold expressions)
+```
+
+---
+
+# **6. Example**
+
+```cpp
+template<typename... Args>
+void foo(Args&&... args) {
+    std::cout << "Number of args: " << sizeof...(Args) << "\n";
+
+    // fold expression using values
+    ((std::cout << args << "\n"), ...);
+
+    // types can be used in a tuple
+    std::tuple<Args...> t;
+}
+```
+
+Call:
+
+```cpp
+foo(1, 2.5, "hello");
+```
+
+* `sizeof...(Args)` → 3
+* Fold expands to: `std::cout << 1 << "\n", std::cout << 2.5 << "\n", std::cout << "hello" << "\n"`
+* `std::tuple<Args...>` → `std::tuple<int, double, const char*>`
+
+---
+
+💡 **Rule of thumb:**
+
+* `...` **always expands a pack**.
+* If you want to use the **values**, expand `args...`.
+* If you want to use the **types**, expand `Args...`.
+* Pack expansion only happens **at the expression level**.
+
+

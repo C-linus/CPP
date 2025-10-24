@@ -1,0 +1,214 @@
+### Type Definition (typedef)
+
+
+1. Introduces a name for an existing type.
+2. This name becomes a synonym of that type.
+3. Useful to construct shorter or more meaningful names for existing types.
+4. Simplifies declaration of some types(e.g. function pointers & templates)
+5. Implementation details that may change can be encapsulated.
+
+Example:- 
+
+1. typedef unsigned int UINT;
+   UINT val{};
+
+2. typedef long long LLONG;
+   LLONG elem{};
+
+3. typedef std::vector<std::list<Employee>> Teams;
+   Teams testingTeams;
+   Teams::iterator it = testingTeams.begin();
+
+4. typedef const char *(*ErrorFn)(int);
+   ErrorFn pfn = GetErrorMessage;
+
+### Type Alias
+
+1. Creates a name that is a synonym of a existing type.
+2. Does not introduce a new type.
+3. Same as a typedef declaration.
+4. Created through the using keyword.
+
+    using identifier = type;
+
+Example:-
+
+1. using UINT = unsigned int;
+   UINT val{};
+
+2. using LLONG = long long;
+   LLONG elem{};
+
+3. using Teams = std::vector<std::list<Employee>>;
+   Teams testingTeams;
+   Teams::iterator it = testingTeams.begin();
+
+4. using ErrorFn = const char* (*) int;
+   ErrorFn pfn = GetErrorMessage;
+
+
+### Templates with type Alias
+
+Alright bro, let’s break this down **cleanly and precisely** — no fluff.
+
+In C++, **`typedef`** and **`using` (type alias)** both give a *new name* to an existing type — but `using` is **newer**, **clearer**, and **way more powerful**, especially when used with **templates**.
+
+Let’s go from basic → to template-level power.
+
+---
+
+## 🧩 1. Basic `typedef` vs `using`
+
+### `typedef`
+
+```cpp
+typedef unsigned long ulong;
+```
+
+Same as:
+
+```cpp
+using ulong = unsigned long;
+```
+
+Both mean:
+
+> “`ulong` is now another name for `unsigned long`.”
+
+They are 100% equivalent **for non-templates**.
+
+---
+
+## ⚙️ 2. Why `using` is better
+
+Unlike `typedef`, `using` works beautifully with **templates** — that’s the key advantage.
+
+Let’s say you have a templated type:
+
+```cpp
+template <typename T>
+using Vec = std::vector<T>;
+```
+
+Now you can do:
+
+```cpp
+Vec<int> v1;     // std::vector<int>
+Vec<double> v2;  // std::vector<double>
+```
+
+This creates a **template alias**, which `typedef` simply **cannot** do.
+If you tried with `typedef`, it wouldn’t work.
+
+---
+
+## ⚔️ 3. Why template aliases matter
+
+They’re especially useful when you wrap or simplify complex template declarations.
+Example:
+
+### Without alias:
+
+```cpp
+std::unordered_map<std::string, std::vector<int>> myMap;
+```
+
+### With alias:
+
+```cpp
+template <typename T>
+using StringMap = std::unordered_map<std::string, T>;
+
+StringMap<std::vector<int>> myMap;  // clean and readable
+```
+
+You just created a **custom template** that’s a specialization pattern of another template.
+
+---
+
+## 💡 4. Aliases with Nested Types
+
+Often you see code like this:
+
+```cpp
+template <typename T>
+struct Wrapper {
+    using value_type = T;  // alias inside a class
+};
+```
+
+That allows others to refer to the inner type as:
+
+```cpp
+Wrapper<int>::value_type x = 10;
+```
+
+This is a common pattern in STL (like `std::vector<T>::value_type`).
+
+---
+
+## 🧠 5. Aliases to simplify metaprogramming (advanced use)
+
+You can use alias templates to **simplify SFINAE, traits, and enable_if code**.
+
+Example:
+
+```cpp
+template <typename T>
+using Ptr = T*;
+
+Ptr<int> p; // same as int*
+```
+
+Or:
+
+```cpp
+template <typename T>
+using EnableIfInt = typename std::enable_if<std::is_integral<T>::value, T>::type;
+```
+
+Then:
+
+```cpp
+EnableIfInt<int> x = 5;    // ok
+EnableIfInt<double> y = 5; // error
+```
+
+This kind of alias saves tons of `typename` and `::type` boilerplate.
+
+---
+
+## ⚰️ 6. `typedef` cannot alias templates
+
+If you tried:
+
+```cpp
+template <typename T>
+typedef std::vector<T> Vec;  // ❌ invalid
+```
+
+It won’t compile.
+That’s **why `using` exists** — it’s the modern replacement for `typedef`.
+
+---
+
+## 🔥 Summary
+
+| Feature                    | `typedef`  | `using`     |
+| -------------------------- | ---------- | ----------- |
+| Basic alias                | ✅          | ✅           |
+| Template alias             | ❌          | ✅           |
+| Inside class/struct        | ✅          | ✅           |
+| Works with SFINAE / traits | ❌          | ✅           |
+| Readability                | ⚠️ C-style | ✅ C++-style |
+| Preferred in modern C++    | ❌          | ✅ ✅ ✅       |
+
+---
+
+## ✅ Final takeaway:
+
+* Use `typedef` only when dealing with legacy C code.
+* Always prefer `using` in modern C++.
+* Template alias (`template <typename T> using ...`) is **a game-changer** for cleaner and reusable generic code.
+
+---

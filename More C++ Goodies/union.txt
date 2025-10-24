@@ -10,3 +10,98 @@
     5) Cannot have a base class
     6) Cannot derive from a  union
     7) Union cannot contain virtual functions
+
+
+
+
+### Placement new 🧠 What it is
+
+**Placement `new`** is a special form of `new` that **constructs an object in a specific memory location** that you’ve already allocated — it does **not** allocate memory itself.
+
+---
+
+### 🧩 Syntax
+
+```cpp
+new (address) Type(constructor_args...);
+```
+
+* `address` → pointer to raw memory where the object should be constructed.
+* `Type(...)` → the object to construct (calls its constructor).
+
+Example:
+
+```cpp
+#include <new>   // for placement new
+char buffer[sizeof(int)];
+int* p = new (buffer) int(42);  // construct int at buffer
+```
+
+---
+
+### ⚙️ What happens under the hood
+
+* Memory already exists (you provide it).
+* The constructor of `Type` is called **in-place** at that address.
+* No heap allocation, no free-store, no operator `new(size)` call.
+* The destructor **must be called manually** if you use placement new.
+
+```cpp
+p->~int();   // manually call destructor
+```
+
+---
+
+### 💀 Common pitfalls
+
+1. **It doesn’t allocate memory** — if you use it on invalid or overlapping memory, you’ll corrupt memory.
+2. **You must destroy objects yourself** (the compiler won’t call destructors automatically).
+3. **You must ensure alignment** of the address to `alignof(Type)`.
+4. **Don’t call `delete`** on a placement-new’d object — only call its destructor.
+
+---
+
+### 💡 Why it exists
+
+* Used in **custom allocators**, **memory pools**, and **container implementations** (like `std::vector`).
+* Useful when you want **fine-grained control** over object lifetime and memory reuse.
+* Avoids repeated allocation/deallocation overhead.
+
+---
+
+### ✅ Example (practical)
+
+```cpp
+#include <new>
+#include <iostream>
+
+int main() {
+    alignas(int) char storage[sizeof(int)];
+
+    // Construct an int in pre-allocated storage
+    int* p = new (storage) int(99);
+    std::cout << *p << "\n";  // prints 99
+
+    // Destroy it manually
+    p->~int();
+}
+```
+
+---
+
+### 🧩 Summary Table
+
+| Operation                    | Regular `new`          | Placement `new`                          |
+| ---------------------------- | ---------------------- | ---------------------------------------- |
+| Allocates memory             | ✅ Yes                  | ❌ No                                     |
+| Calls constructor            | ✅ Yes                  | ✅ Yes                                    |
+| Frees memory on `delete`     | ✅ Yes                  | ❌ No                                     |
+| Needs manual destructor call | ❌ No                   | ✅ Yes                                    |
+| Used for                     | normal dynamic objects | in-place construction, custom allocators |
+
+---
+
+In short:
+
+> **Placement new = “construct this object *right here*, don’t allocate anything.”**
+> It gives you **explicit control over where and when an object lives** in memory.
