@@ -1,0 +1,74 @@
+### 1️⃣ Captureless lambda → closure struct
+
+```cpp
+auto lambda1 = [](int x){ return x + 1; };
+```
+
+* Compiler generates a closure struct:
+
+```cpp
+struct __lambda {
+    int operator()(int x) const { return x + 1; }
+    
+    // Only for captureless lambdas
+    operator int(*)(int)() const {
+        return &__lambda::operator(); // returns pointer to static helper
+    }
+};
+```
+
+* `operator()` is normally a **non-static member**, but **member functions need a `this` pointer**.
+
+---
+
+## 2️⃣ Problem: function pointers cannot carry `this`
+
+* Normal member function pointer requires a `this` pointer to access captured members:
+
+  ```cpp
+  int __lambda::operator()(int x) const;
+  ```
+
+* But **function pointer `int(*)(int)` has no `this` argument**.
+
+* Solution: compiler generates a **thin static wrapper (callback)**:
+
+```cpp
+static int wrapper(int x) {
+    return __lambda{}.operator()(x); // constructs temporary closure
+}
+```
+
+* Conversion operator returns **address of this wrapper**, not the original operator.
+* Wrapper is a **function with plain `int` argument**, so it can match the function pointer type.
+
+---
+
+## 3️⃣ Key points
+
+| Concept             | Why needed                                                                |
+| ------------------- | ------------------------------------------------------------------------- |
+| Captureless lambda  | Has no state → can be converted to function pointer                       |
+| Conversion operator | Implicit, returns `int(*)(int)`                                           |
+| Wrapper function    | Needed because `operator()` is a member function needing `this`.          |
+| `this` pointer      | Not passed; wrapper creates temporary closure object to call `operator()` |
+
+---
+
+## 4️⃣ Why `this` is null / not used
+
+* Wrapper **does not capture any state**, because captureless lambda has **no members**.
+* It just constructs a temporary object and calls `operator()` → effectively stateless.
+* Therefore, passing `this` is unnecessary → it’s `null` in disassembly terms.
+
+---
+
+## 5️⃣ TL;DR
+
+* **Captureless lambda decay** → implicit conversion operator → **returns a static wrapper**.
+* Wrapper calls the lambda’s `operator()`, constructing a temporary closure.
+* The wrapper allows the lambda to **match a raw function pointer type**.
+* No `this` is passed because there’s **no captured state**; wrapper is stateless.
+
+---
+

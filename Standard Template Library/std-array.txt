@@ -1,0 +1,9 @@
+### std::array
+
+1. Thin wrapper over C-style static array
+2. Supports iterators
+3. Knows about its size
+4. Provides random access
+5. Can be used with C functions
+6. Cannot grow
+

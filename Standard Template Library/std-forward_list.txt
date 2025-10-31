@@ -1,0 +1,7 @@
+### std::forward_list
+
+1. Implemented as a one-way linked list
+2. Small memory footprint
+3. Efficient for insertion/deletion
+4. Does not provide support for size
+5. Elements are added at the front

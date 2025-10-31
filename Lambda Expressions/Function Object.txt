@@ -1,0 +1,30 @@
+### Function Object
+
+1. Object with overloaded function call operator.
+2. Call to overloaded function call operator resembles a global function call
+3. Can be used as a callback instead of function pointers
+4. More efficient than function pointers.
+5. Usually implemented as structs.
+
+### Function Pointer Vs Function Object
+
+## Function Pointer
+
+1. Invoked through a Pointer
+2. Dynamic in nature
+3. Can be specified at runtime
+4. Difficult to optimize
+5. Slow
+
+
+## Function Object
+
+1. Invoked through an Object
+2. Static in nature
+3. Must be specified at compile time
+4. Easy to optimize
+5. Fast
+
+
+
+# It is not possible to specify object at runtime

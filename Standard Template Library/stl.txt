@@ -1,0 +1,54 @@
+### Standard Template Library
+
+1. Heart of the standard library for C++
+2. Developed by Alexander Stepenov & Meng Lee at Hewlett Packard
+3. Provides fast & reusable containers and algorithms
+4. Relies heavily on templates; almost every component in the STL is a template
+
+### Core Components
+
+1. Container classes, algorithms & iterators form the core components of the STL.
+2. Container classes represent data & algorithms represent operations on the data
+3. Iterators serve as the glue between containers and algorithms
+4. Also includes classes for concurrency, random numbers, regular expressions, utilities, etc.
+
+### Why use the STL?
+
+1. Quicker development
+2. Reliable
+3. Portable
+4. Efficient & fast
+5. Accurate
+6. Readable Code
+7. Lower maintenance cost
+
+
+### Container Types
+
+    Sequence             Header
+1.  array                <array>
+2.  vector               <vector>
+3.  list                 <list>
+4.  deque                <deque>
+5.  forward_list         <forward_list>
+
+    Associative          Header
+1.  set,multiset         <set>
+2.  map,multimap         <map>
+
+    Unordered                               Header
+1.  unordered_set,unordered_multiset        <unordered_set>
+2.  unordered_map,unordered_multimap        <unordered_map>
+
+
+### Common functions
+
+1. Default constructor
+2. Uniform intialization
+3. Copy constructor
+4. iterator constructor
+5. size()
+6. clear()
+7. begin()
+8. end()
+9. default allocator

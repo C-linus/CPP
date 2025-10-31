@@ -1,0 +1,8 @@
+### std::map
+
+1. Implemented as a binary tree
+2. Stores a pair that conatians a key and value
+3. Elements are stored in sorted order based on key
+4. Fast search
+5. No random access
+6. Keys cannot be modified directly

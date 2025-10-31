@@ -1,0 +1,6 @@
+### Iterators
+
+1. Pointer like objects
+2. Used to access elements by their position
+3. Provide overloaded operators, such as ++,--,*, etc
+4. Created through begin() & end() fuctions in all containers

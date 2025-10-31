@@ -1,0 +1,7 @@
+### std::vector
+
+1. Behaves like a dynamic array
+2. Grows automatically
+3. Efficient for addition/ removal at the end
+4. Provides random access
+5. Not good for insertion/deletion

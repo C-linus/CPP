@@ -1,0 +1,11 @@
+### Generalized Capture (C++14)
+
+1. This feature allows creation of new variables in the capture clause.
+2. The type of these variables is deduced from the type produced by the expression.
+3. Consequently, these variables must always be initialized.
+4. If the initializer expression is a variable, the new variable can have the same or different name.
+5. To create a reference, you have to use operator & before the variable name
+
+Syntax:-
+    [var = expression](args)
+    [&var = expression](args)

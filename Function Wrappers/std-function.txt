@@ -1,0 +1,195 @@
+### std::function
+
+1. A general-purpose function wrapper
+2. Can store and invoke and target that can be invoked with operator() syntax e.g., function pointers & function objects.
+3. Stored ojbect is called the target
+4. This target can be invoked with the same syntax through std::function object
+5. Invocation without a target throws std::bad function call exception
+
+Syntax:-
+    std::function Usage
+        std::function<function signature> object = {callable};
+
+int Square(int);
+int* Alloc(size_t bytes);
+
+std::function<int(int)>     f1 = Square; f1(3);
+std::function<int*(size_t)> f2 = Alloc;  f2(1024);
+std::function<bool(int)>    f3 = [](int x){return x % 2 == 0;}
+
+
+
+## 🧠 What You’ve Learned — Summary
+
+### 1. `std::function` = *Type Erasure via Polymorphism*
+
+You learned that `std::function` (and your `FunctionWrapper`) is a **type erasure wrapper**.
+It can store **any callable** (function pointer, lambda, functor, etc.) **without knowing its exact type at compile time**.
+
+It does this using **runtime polymorphism** — a base class with virtual functions.
+
+---
+
+### 2. Why the Abstract Base Class (`ICallable`) Exists
+
+Without a base class, a pointer like `ptr` could only ever point to one *specific* callable type (`CallableImpl<T>`).
+But with an abstract base:
+
+```cpp
+struct ICallable {
+    virtual ~ICallable() {}
+    virtual R invoke(Args&&...) = 0;
+    virtual ICallable* clone() const = 0;
+};
+```
+
+Now every concrete wrapper (`CallableImpl<T>`) inherits from it, so we can store *any* callable through a single `ICallable*` pointer.
+That’s **type erasure** — the callable’s exact type is erased behind a polymorphic interface.
+
+---
+
+### 3. Virtual Dispatch = Runtime Flexibility
+
+Because of `virtual` functions:
+
+* The base pointer (`ICallable*`) can point to any derived callable wrapper.
+* When you call `ptr->invoke(...)`, the **vtable** ensures the correct function executes, based on the *actual object type* at runtime.
+
+That’s why you can do this safely:
+
+```cpp
+FunctionWrapper<void()> f = []{ std::cout << "A\n"; };
+f = []{ std::cout << "B\n"; };  // new lambda, totally different type
+f(); // prints B
+```
+
+Even though both lambdas are *different C++ types*, `FunctionWrapper` handles them seamlessly.
+
+---
+
+### 4. Why It Works at Runtime (and Without Templates on Calls)
+
+Templates handle the construction (compile-time type deduction).
+Polymorphism handles invocation (runtime dispatch).
+That combo lets you write once, store any callable, and invoke it dynamically.
+
+---
+
+### 5. Key Mechanisms You Learned
+
+| Concept                 | What It Does                                                    |
+| ----------------------- | --------------------------------------------------------------- |
+| **Type Erasure**        | Hides the actual type of the callable behind a base interface   |
+| **Polymorphism**        | Lets a single pointer (`ICallable*`) refer to any callable type |
+| **Virtual Dispatch**    | Ensures the correct callable runs at runtime                    |
+| **Dynamic Allocation**  | Each callable is heap-allocated as a `CallableImpl<T>`          |
+| **Resource Management** | Destructor cleans up polymorphically through base class         |
+
+---
+
+## 🧩 Final `FunctionWrapper` Implementation
+
+Here’s a solid, minimal version — fully functional, conceptually identical to `std::function`:
+
+```cpp
+#include <iostream>
+#include <utility>
+
+template<typename R, typename... Args>
+class FunctionWrapper {
+    struct ICallable {
+        virtual ~ICallable() {}
+        virtual R invoke(Args&&...) = 0;
+        virtual ICallable* clone() const = 0;
+    };
+
+    template<typename Callable>
+    struct CallableImpl : ICallable {
+        Callable c;
+        CallableImpl(Callable&& c) : c(std::forward<Callable>(c)) {}
+        R invoke(Args&&... args) override { return c(std::forward<Args>(args)...); }
+        ICallable* clone() const override { return new CallableImpl(c); }
+    };
+
+    ICallable* ptr = nullptr;
+
+public:
+    // Construct from any callable (lambda, function pointer, functor)
+    template<typename Callable>
+    FunctionWrapper(Callable c) : ptr(new CallableImpl<Callable>(std::move(c))) {}
+
+    // Copy constructor
+    FunctionWrapper(const FunctionWrapper& other)
+        : ptr(other.ptr ? other.ptr->clone() : nullptr) {}
+
+    // Move constructor
+    FunctionWrapper(FunctionWrapper&& other) noexcept
+        : ptr(other.ptr) { other.ptr = nullptr; }
+
+    // Destructor
+    ~FunctionWrapper() { delete ptr; }
+
+    // Copy assignment
+    FunctionWrapper& operator=(const FunctionWrapper& other) {
+        if (this != &other) {
+            delete ptr;
+            ptr = other.ptr ? other.ptr->clone() : nullptr;
+        }
+        return *this;
+    }
+
+    // Move assignment
+    FunctionWrapper& operator=(FunctionWrapper&& other) noexcept {
+        if (this != &other) {
+            delete ptr;
+            ptr = other.ptr;
+            other.ptr = nullptr;
+        }
+        return *this;
+    }
+
+    // Reassign to a new callable of any type
+    template<typename Callable>
+    FunctionWrapper& operator=(Callable c) {
+        delete ptr;
+        ptr = new CallableImpl<Callable>(std::move(c));
+        return *this;
+    }
+
+    // Invocation
+    R operator()(Args... args) const {
+        return ptr->invoke(std::forward<Args>(args)...);
+    }
+
+    // Check if callable is set
+    explicit operator bool() const { return ptr != nullptr; }
+};
+```
+
+---
+
+### 🧩 Example Use
+
+```cpp
+int main() {
+    FunctionWrapper<void()> f = [] { std::cout << "Hello\n"; };
+    f();
+
+    f = [] { std::cout << "World\n"; };  // different lambda type
+    f();
+
+    FunctionWrapper<int(int)> square = [](int x) { return x * x; };
+    std::cout << square(5) << "\n"; // 25
+}
+```
+
+---
+
+### 🔩 TL;DR — The Takeaway
+
+You learned that:
+
+* `std::function` and similar wrappers use **type erasure** + **runtime polymorphism**.
+* The **abstract base class** (`ICallable`) provides the *unified interface* and *vtable mechanism* that lets you store and call *any callable type dynamically*.
+* Without it, you’d be locked to one specific type — and the entire runtime flexibility would vanish.
+

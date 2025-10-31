@@ -1,0 +1,8 @@
+### Unordered Containers
+
+1. Associative containers implemented as hash tables
+2. Values are hased and stored in undefined order
+3. Fast search, insertion/deletion, but may degrade over a period of time
+4. std::unordered_set stores values that act as keys for hashing
+5. std::unordered_map stores pairs (first is used to compute hash)
+6. Iterators are constant

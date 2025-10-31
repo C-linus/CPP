@@ -1,0 +1,230 @@
+### Lambda Expressions
+
+1. Defines an anonymous function object
+2. Syntactic shortcut for a function object
+3. Can be passed as an argument
+4. Can accept parameters and return values
+5. Typically encapsulates a few lines of code
+6. Behaves like a normal function, when invoked.
+7. Replaces function Objects
+8. Internally, implemented as a nameless function object.
+9. Use auto to provide an explicit name.
+
+Syntax:-
+
+Lambda Introducer -> [](<args>)<mutable><excp specification> -> <return type>
+{
+    // Function Body
+}
+
+
+
+
+## 🧩 The Full Lambda Syntax
+
+```
+[captures] (parameters) mutable exception -> return_type { body }
+```
+
+All of these are **optional** pieces that control how the compiler generates the hidden functor class.
+
+Let’s decode each piece one by one — both **meaning** and **how it translates under the hood**.
+
+---
+
+## 1️⃣ Lambda Introducer: `[]`
+
+This is the **capture list** — it defines what variables from outside you want to make available *inside* the lambda.
+
+Example:
+
+```cpp
+int a = 5, b = 10;
+auto f = [a, &b]() { return a + b; };
+```
+
+Compiler transforms this to roughly:
+
+```cpp
+struct __Lambda {
+    int a;   // captured by value
+    int& b;  // captured by reference
+
+    int operator()() const {
+        return a + b;
+    }
+};
+```
+
+So `[]` literally tells the compiler what data members to put in the generated class.
+
+| Syntax   | Meaning                         | Inside generated struct |
+| -------- | ------------------------------- | ----------------------- |
+| `[a]`    | capture `a` by value            | `int a;`                |
+| `[&a]`   | capture `a` by reference        | `int& a;`               |
+| `[=]`    | capture everything by value     | `int a; int b;`         |
+| `[&]`    | capture everything by reference | `int& a; int& b;`       |
+| `[this]` | capture current object          | `YourClass* this;`      |
+
+So the **capture list** defines the **data members** of the lambda’s hidden class.
+
+---
+
+## 2️⃣ Parameter List: `(args)`
+
+This is just like a function’s parameters — they become the **parameters of the operator()**.
+
+Example:
+
+```cpp
+auto f = [](int x, int y) { return x + y; };
+```
+
+Becomes:
+
+```cpp
+struct __Lambda {
+    int operator()(int x, int y) const {
+        return x + y;
+    }
+};
+```
+
+If you use `(auto x, auto y)` → it becomes a **templated operator()**, so it can accept any type.
+
+---
+
+## 3️⃣ Mutable Keyword: `mutable`
+
+By default, lambdas make their `operator()` **const**, which means you can’t modify captured-by-value variables inside.
+
+Example:
+
+```cpp
+int a = 5;
+auto f = [a]() { a++; }; // ❌ error, operator() is const
+```
+
+If you add `mutable`:
+
+```cpp
+auto f = [a]() mutable { a++; }; // ✅ allowed
+```
+
+The compiler now generates:
+
+```cpp
+struct __Lambda {
+    int a;
+    int operator()() { a++; }  // not const anymore
+};
+```
+
+So **`mutable` removes the implicit const** on the lambda’s operator().
+
+---
+
+## 4️⃣ Exception Specification: `noexcept` or `throw()`
+
+You can mark lambdas as `noexcept` just like normal functions.
+
+```cpp
+auto f = []() noexcept { };
+```
+
+Becomes:
+
+```cpp
+struct __Lambda {
+    void operator()() const noexcept { }
+};
+```
+
+This affects exception guarantees and sometimes allows better optimization.
+
+---
+
+## 5️⃣ Return Type: `-> return_type`
+
+Usually, the compiler deduces the return type automatically from your `return` statement.
+But if you have multiple returns or something ambiguous, you can specify it.
+
+Example:
+
+```cpp
+auto f = [](int x) -> double { return x / 2.0; };
+```
+
+Generates:
+
+```cpp
+struct __Lambda {
+    double operator()(int x) const { return x / 2.0; }
+};
+```
+
+Without `-> double`, it might deduce `int` or `auto` depending on the expression.
+
+---
+
+## 6️⃣ Function Body: `{ ... }`
+
+This is the **body of the operator()** — exactly like any function.
+Whatever you write here becomes the body of the generated `operator()` method.
+
+---
+
+## 💡 So the full picture
+
+When you write this:
+
+```cpp
+auto f = [a, &b](int x) mutable noexcept -> int {
+    return (x + a + b);
+};
+```
+
+The compiler transforms it to something like:
+
+```cpp
+struct __Lambda {
+    int a;   // captured by value
+    int& b;  // captured by reference
+
+    int operator()(int x) noexcept {   // mutable -> not const
+        return (x + a + b);
+    }
+};
+
+__Lambda f{a, b};  // object created
+```
+
+When you call:
+
+```cpp
+int result = f(10);
+```
+
+it becomes:
+
+```cpp
+int result = f.operator()(10);
+```
+
+No magic — it’s just an object with an overloaded `()` operator.
+
+---
+
+## 🧠 In short
+
+| Part       | Meaning                           | Equivalent in generated class |
+| ---------- | --------------------------------- | ----------------------------- |
+| `[]`       | capture list                      | data members                  |
+| `()`       | parameters                        | parameters of `operator()`    |
+| `mutable`  | allow modifying captured-by-value | removes `const`               |
+| `noexcept` | exception spec                    | same on `operator()`          |
+| `-> type`  | return type                       | return type of `operator()`   |
+| `{}`       | body                              | function body of `operator()` |
+
+---
+

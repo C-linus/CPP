@@ -1,0 +1,5 @@
+### std::list
+
+1. Implemented as a two-way linked list
+2. Efficient for insertion/deletion anywhere
+3. Does not provide random access
